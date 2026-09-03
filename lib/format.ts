@@ -71,6 +71,23 @@ export function formatDateRange(
   return `${left} – ${pb.day} ${pb.month} ${pb.year}`;
 }
 
+const DATETIME = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+  timeZone: IST,
+});
+
+/** "2 Sep, 6:00 pm" — the static, screen-reader-friendly form of an SLA deadline
+ *  (docs/03 VW-05, docs/07 §Accessibility). IST. */
+export function formatDateTime(value: string | Date | null | undefined): string {
+  const d = toDate(value);
+  if (!d) return "—";
+  return DATETIME.format(d).replace(/\b(am|pm)\b/i, (m) => m.toUpperCase());
+}
+
 /** "just now" / "5 min ago" / "3 h ago" / "2 days ago" — supplementary only. */
 export function formatRelative(
   value: string | Date | null | undefined,

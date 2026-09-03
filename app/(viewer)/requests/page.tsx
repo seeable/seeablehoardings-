@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { PhasePlaceholder } from "@/components/phase-placeholder";
+import { Suspense } from "react";
+import { MyRequestsView } from "@/components/requests/my-requests-view";
 
 export const metadata: Metadata = { title: "My requests" };
+export const dynamic = "force-dynamic";
 
 export default function MyRequestsPage() {
   return (
-    <PhasePlaceholder
-      title="My requests"
-      screen="My requests (VW-05)"
-      phase={7}
-    />
+    <Suspense fallback={null}>
+      <MyRequestsView />
+    </Suspense>
   );
 }

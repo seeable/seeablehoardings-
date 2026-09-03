@@ -6,12 +6,12 @@ import { ArrowLeft, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerifiedBadge } from "@/components/ui/badge";
 import { Alert } from "@/components/ui/card";
-import { useToast } from "@/components/ui/toast";
 import {
   AvailabilityCalendar,
   type DayState,
 } from "@/components/ui/availability-calendar";
 import { PhotoCarousel } from "@/components/discovery/photo-carousel";
+import { SubmitRequestModal } from "@/components/requests/submit-request-modal";
 import { formatPrice, formatDate, formatDateRange } from "@/lib/format";
 import { isWithin, todayIST, type ISODate } from "@/lib/date";
 import { humanizeAttributeKey } from "@/lib/inventory/attributes";
@@ -31,8 +31,8 @@ const titleCase = (s: string) =>
  * label; the request itself is wired in Phase 7.
  */
 export function DetailView({ hoarding: h }: { hoarding: PublicHoardingDetail }) {
-  const toast = useToast();
   const today = todayIST();
+  const [requestOpen, setRequestOpen] = React.useState(false);
   const [{ year, month }, setMonth] = React.useState(() => {
     const [y, m] = today.split("-").map(Number);
     return { year: y, month: m };
@@ -171,13 +171,7 @@ export function DetailView({ hoarding: h }: { hoarding: PublicHoardingDetail }) 
                   Next available{" "}
                   {formatDate(h.availability_summary.next_available_date)}
                 </p>
-                <Button
-                  block
-                  disabled={!start}
-                  onClick={() =>
-                    toast.info("Requesting a hoarding arrives in Phase 7.")
-                  }
-                >
+                <Button block onClick={() => setRequestOpen(true)}>
                   {ctaLabel}
                 </Button>
                 <p className="text-ink-500 text-[11px]">
@@ -200,14 +194,19 @@ export function DetailView({ hoarding: h }: { hoarding: PublicHoardingDetail }) 
         {fullyBooked ? (
           <span className="text-ink-500 text-sm">Fully booked</span>
         ) : (
-          <Button
-            disabled={!start}
-            onClick={() => toast.info("Requesting a hoarding arrives in Phase 7.")}
-          >
+          <Button onClick={() => setRequestOpen(true)}>
             {start ? ctaLabel : "Request"}
           </Button>
         )}
       </div>
+
+      <SubmitRequestModal
+        hoarding={h}
+        open={requestOpen}
+        onClose={() => setRequestOpen(false)}
+        initialStart={start}
+        initialEnd={end}
+      />
     </div>
   );
 }

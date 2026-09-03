@@ -150,6 +150,65 @@ export type Database = {
           },
         ]
       }
+      api_idempotency_keys: {
+        Row: {
+          created_at: string
+          endpoint: string
+          key: string
+          request_id: string | null
+          response_json: Json
+          status_code: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          key: string
+          request_id?: string | null
+          response_json: Json
+          status_code: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          key?: string
+          request_id?: string | null
+          response_json?: Json
+          status_code?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_idempotency_keys_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "publisher_inbox"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_idempotency_keys_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_idempotency_keys_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "viewer_request_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_idempotency_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hoarding_availability_blocks: {
         Row: {
           created_at: string
@@ -866,8 +925,15 @@ export type Database = {
           created_at: string | null
           end_date: string | null
           expired_at: string | null
+          hoarding_city: string | null
           hoarding_id: string | null
+          hoarding_is_listed: boolean | null
+          hoarding_locality: string | null
+          hoarding_price: number | null
+          hoarding_price_unit: string | null
+          hoarding_primary_media_path: string | null
           hoarding_title: string | null
+          hoarding_type_code: string | null
           id: string | null
           live_at: string | null
           message: string | null
@@ -883,6 +949,13 @@ export type Database = {
           viewer_name: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "hoardings_type_code_fkey"
+            columns: ["hoarding_type_code"]
+            isOneToOne: false
+            referencedRelation: "hoarding_types"
+            referencedColumns: ["code"]
+          },
           {
             foreignKeyName: "requests_completed_by_fkey"
             columns: ["completed_by"]
@@ -937,19 +1010,25 @@ export type Database = {
       viewer_request_list: {
         Row: {
           amount_agreed: number | null
-          city: string | null
           completed_at: string | null
           completed_by: string | null
           confirmed_at: string | null
           created_at: string | null
           end_date: string | null
           expired_at: string | null
+          hoarding_city: string | null
           hoarding_id: string | null
+          hoarding_is_listed: boolean | null
+          hoarding_locality: string | null
+          hoarding_price: number | null
+          hoarding_price_unit: string | null
+          hoarding_primary_media_path: string | null
           hoarding_title: string | null
+          hoarding_type_code: string | null
           id: string | null
           live_at: string | null
-          locality: string | null
           message: string | null
+          publisher_business_name: string | null
           publisher_id: string | null
           rejected_at: string | null
           rejection_reason: string | null
@@ -961,6 +1040,13 @@ export type Database = {
           viewer_id: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "hoardings_type_code_fkey"
+            columns: ["hoarding_type_code"]
+            isOneToOne: false
+            referencedRelation: "hoarding_types"
+            referencedColumns: ["code"]
+          },
           {
             foreignKeyName: "requests_completed_by_fkey"
             columns: ["completed_by"]
@@ -1302,6 +1388,17 @@ export type Database = {
       }
       expire_stale_requests: { Args: never; Returns: number }
       get_original_media_path: { Args: { p_media_id: string }; Returns: string }
+      get_request_history: {
+        Args: { p_request_id: string }
+        Returns: {
+          actor_id: string
+          actor_role: string
+          changed_at: string
+          from_status: string
+          note: string
+          to_status: string
+        }[]
+      }
       haversine_km: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
@@ -1522,6 +1619,37 @@ export type Database = {
           total_count: number
           type_code: string
         }[]
+      }
+      set_request_amount_agreed: {
+        Args: { p_amount: number; p_request_id: string }
+        Returns: {
+          amount_agreed: number | null
+          completed_at: string | null
+          completed_by: string | null
+          confirmed_at: string | null
+          created_at: string
+          end_date: string
+          expired_at: string | null
+          hoarding_id: string
+          id: string
+          live_at: string | null
+          message: string | null
+          publisher_id: string
+          rejected_at: string | null
+          rejection_reason: string | null
+          sla_deadline: string | null
+          start_date: string
+          status: string
+          stay_range: unknown
+          updated_at: string
+          viewer_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       submit_hoarding_for_review: {
         Args: { p_hoarding_id: string }

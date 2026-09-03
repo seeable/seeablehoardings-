@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { PhasePlaceholder } from "@/components/phase-placeholder";
+import { Suspense } from "react";
+import { IncomingRequestsView } from "@/components/requests/incoming-requests-view";
 
 export const metadata: Metadata = { title: "Requests" };
+export const dynamic = "force-dynamic";
 
 export default function IncomingRequestsPage() {
   return (
-    <PhasePlaceholder
-      title="Requests"
-      screen="Incoming requests (PB-06) and request detail (PB-07)"
-      phase={7}
-    />
+    <Suspense fallback={null}>
+      <IncomingRequestsView />
+    </Suspense>
   );
 }

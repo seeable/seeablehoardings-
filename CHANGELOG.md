@@ -1,5 +1,113 @@
 # Changelog
 
+## Phase 7 — Request / Booking Engine
+
+The full booking-lite lifecycle. A Viewer submits a date request; the Publisher
+accepts (conflict-safe, transactional) or rejects; unanswered requests expire and
+confirmed ones go Live then Completed — with `REQUEST-004` enforced by the DB and
+surfaced honestly in both UIs, live via Realtime.
+
+The engine (`confirm_request` / `reject_request` / `mark_request_completed`, the
+`validate_request_creation` BEFORE-INSERT trigger, the `EXCLUDE USING gist`
+constraint, the `VIEWER-002` partial unique index, the `expire`/`live` pg_cron
+jobs) was built in **Phase 1** — this phase **verifies** it under concurrent load
+and builds the API + screens on top.
+
+- **DB — `20260907120000_request_engine_phase7`** (the two gaps + view fields):
+  - `set_request_amount_agreed(request_id, amount)` — the one transition Phase 1
+    did not build (api-spec §20.4). `SECURITY DEFINER`, owner-only, only after
+    the request leaves `REQUESTED` (`REQUEST_AMOUNT_NOT_SETTABLE` otherwise),
+    D7-tagged.
+  - `get_request_history(request_id)` — `SECURITY DEFINER`, party-or-Admin gate
+    (mirrors `rsh_select_via_request`), resolves the counterparty actor's role
+    which `profiles` RLS (`id = auth.uid()`) otherwise hides. `changed_by NULL`
+    → `note: "system"` for a pg_cron transition.
+  - `viewer_request_list` / `publisher_inbox` recreated to carry the embedded
+    `hoarding` summary (`type_code`, `price`, `price_unit`, a primary-media
+    path, an `is_listed` flag) + `publisher_business_name` — both stay
+    `security_invoker = false`, so the summary survives a since-paused listing
+    (§23.3) and the column projection remains the disintermediation boundary.
+  - `api_idempotency_keys` (user-scoped RLS) — replay-safety for
+    `POST /api/v1/requests` (§17.1 / §31). Only 201s are cached; `VIEWER-002`
+    still absorbs a concurrent double-submit on its own.
+- **Backend** (`lib/requests/`, thin facades over `rpc()`):
+  - `POST /api/v1/requests` — one atomic `INSERT`; shape checks (`INVALID_DATE_RANGE`,
+    `DATE_RANGE_IN_PAST`), then the trigger/constraints do the rest.
+    `Idempotency-Key` header honoured; `REQUEST_DUPLICATE_PENDING` is enriched
+    with the existing request's id/dates/status (§17.5).
+  - `GET /api/v1/requests/me` · `GET /api/v1/requests/{id}` (Admin → 404, §6.6) ·
+    `GET /api/v1/requests/{id}/history` · `GET /api/v1/publishers/me/requests`
+    (inbox — `REQUESTED` first, then `sla_deadline ASC NULLS LAST`, then
+    `created_at DESC`; `available_actions[]`, `sla_hours_remaining`,
+    `counts_by_status`).
+  - `PATCH /api/v1/requests/{id}` — one endpoint, `ACCEPT`/`REJECT`/`COMPLETE`/
+    `SET_AMOUNT_AGREED` via `action`. `CANCEL` → `501 REQUEST_CANCEL_UNSUPPORTED`;
+    unknown → `422 REQUEST_ACTION_INVALID`. Error precedence: action → role
+    (Admin `ACCEPT`/`REJECT` → `403 FORBIDDEN_ROLE`) → ownership → state.
+  - `status_label` + `available_actions` computed once in `lib/requests/projection.ts`
+    — no client re-derives the state machine.
+- **Frontend** (`components/requests/`):
+  - **VW-04** `SubmitRequestModal` — wired to the VW-03 CTA. Editable pre-filled
+    range (inline calendar re-opener), optional message, disclaimer.
+    `REQUEST_DATE_CONFLICT` is a first-class non-alarming state ("just booked by
+    another advertiser" → "Choose different dates", message preserved);
+    `REQUEST_DUPLICATE_PENDING` links to the existing request; `aria-live` swaps.
+  - **VW-05** `MyRequestsView` (`/requests`) — status tabs (Rejected/Expired
+    grouped), Request Cards, detail drawer with per-status plain-language
+    explainers, no cancel. **Live via `useRequestRealtime`.**
+  - **PB-06** `IncomingRequestsView` (`/publisher/requests`) — status tabs,
+    SlaCountdown (`warning-700` in the final-hours window, live + static SR
+    text). **Live via `useRequestRealtime`.**
+  - **PB-07** `PublisherRequestDrawer` — Accept = one click → toast → back;
+    Reject = inline optional-reason expansion; accept-race state; Mark Completed
+    when eligible.
+
+### Deviations / calls
+
+- **Losing overlapping request stays `REQUESTED`** — it does **not** auto-reject
+  (api-spec §19.3 Case 1; `confirm_request()` never touches it). `04-Screens-Publisher.md`
+  PB-07's older "automatically marked Rejected" copy is not followed; the drawer
+  says "still pending — decline it or leave it to expire".
+- **`404` vs `409` on `POST /requests`** — a listing not currently visible to the
+  Viewer reads as `HOARDING_NOT_FOUND` (no inventory oracle, §6.5); a listing
+  paused mid-flight still yields the trigger's `409 HOARDING_NOT_VISIBLE`.
+- **`REQUEST_SLA_HOURS`** is a code constant (`lib/requests/types.ts`) mirroring
+  `default_response_sla()` — for the "usually within 48 hours" copy only. The
+  plan named an env var; the value is non-secret and the DB function is the
+  source of truth for the actual deadline.
+- **`publisher.id`** is omitted from the Viewer's request resource (business_name
+  + is_verified only) — §16.3 shows it, §23.4's disintermediation table doesn't.
+- **Inbox sort/paginate in memory** — the `REQUESTED`-first key is a CASE
+  expression PostgREST cannot express in `.order()`; correct + simplest at MVP
+  scale (a handful of requests per Publisher).
+- **Concurrency test is a standing local harness**, not a CI job — same pattern
+  as `verify:authz` / `verify:inventory` / `verify:discovery` (all need live
+  Supabase secrets CI's placeholder env lacks).
+
+### Tests
+
+- `tests/unit/requests.test.ts` — +18 (inclusive-inclusive overlap 1–15/10–20;
+  `durationDays`; `statusLabel` by role; `availableActions` state machine;
+  `slaHoursRemaining`). **179 unit total.**
+- **`scripts/verify-requests.mjs`** (`npm run verify:requests`) — **25/25** live,
+  including **the concurrency suite (RISK-4)**: 8 rounds of two simultaneous
+  `confirm_request` on overlapping `REQUESTED` rows → **exactly one** `CONFIRMED`
+  every round, the loser `REQUEST_DATE_CONFLICT` and still `REQUESTED`. Also:
+  full lifecycle; SLA-expiry vs accept (exactly one transition); two Viewers
+  overlapping → both `REQUESTED`; creation vs `CONFIRMED` dates blocked;
+  `VIEWER-002` then reject-then-succeeds; `REQUEST-002` immediate release;
+  `REQUEST-003` too-early; `amount_agreed` gating; Admin `COMPLETE` works but the
+  request is not Admin-readable (D10); `expire_stale_requests()` idempotent;
+  the three pg_cron jobs scheduled; disintermediation on `viewer_request_list` /
+  `publisher_inbox`.
+- **`tests/e2e/request-flow.spec.ts`** (opt-in, `SEEABLE_E2E_LIVE=1`) — the
+  canonical flow through the real UI: sign up → open a seeded listing → submit
+  via the modal → Pending in My Requests → `confirm_request()` → Confirmed on
+  reload. Passing.
+- `verify:inventory` 23/23, `verify:discovery` 15/15, `verify:authz` 26/26 still
+  green. lint / typecheck / `next build` / `cf:build` (maplibre-gl absent from
+  the server bundle) / 15 e2e green.
+
 ## Phase 6 — Viewer Discovery
 
 A Viewer browses, filters, and maps the visible catalogue and opens a full

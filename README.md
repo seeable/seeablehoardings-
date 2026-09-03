@@ -4,7 +4,7 @@ A two-sided marketplace connecting hoarding **Publishers** (inventory owners) wi
 
 - **Product spec:** [`docs/`](docs/) — PRD/BRD, module specs, architecture, database design, API spec, UI/UX (9 files).
 - **Build roadmap:** [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md) — 14 phases, every decision resolved.
-- **Status:** Phase 6 (Viewer discovery) complete — VW-01 Discover (filters + sort + `/discover`), VW-02 Map (`HoardingMap`, lazy MapLibre, one filtered result set), VW-03 Hoarding Detail (`/discover/[id]` — carousel, Site Intelligence partial-omission, read+select calendar). `search_available_hoardings()` finalised (`SECURITY DEFINER`, monthly-normalised budget, pagination + sort). `npm run verify:discovery` — 15/15 live incl. the disintermediation payload test. Phase 7 (request/booking engine) next.
+- **Status:** Phase 7 (request/booking engine) complete — VW-04 Submit Request (modal, first-class `REQUEST_DATE_CONFLICT` state), VW-05 My Requests, PB-06 Incoming Requests (SLA countdown), PB-07 Request Detail (accept/reject/complete), all live via Realtime. Full `REQUESTED → CONFIRMED/REJECTED/EXPIRED → LIVE → COMPLETED` lifecycle; every transition is a `SECURITY DEFINER` function (no client writes `status`). `npm run verify:requests` — 25/25 live, including 8 rounds of the concurrent-confirm race (RISK-4): exactly one winner every time. Phase 8 (Publisher platform) next.
 
 ## Stack
 
@@ -73,6 +73,7 @@ Until you create a Supabase project, `.env.local` ships with placeholder values 
 | `npm run verify:authz [-- --api]`               | RLS / permission-matrix harness against the live project                |
 | `npm run verify:inventory`                      | Inventory gates / visibility / edit-freeze harness against the live project |
 | `npm run verify:discovery`                      | Discovery filters / INVENTORY-003 / disintermediation payload harness (live) |
+| `npm run verify:requests`                       | Request Engine lifecycle + concurrency (RISK-4) harness against the live project |
 | `npm run check:bundle`                          | Assert no service-role material in the client bundle (post-build)       |
 | `npm run provision:admin -- <email>`            | Promote an already-registered account to `ADMIN` (see `docs/runbooks/`) |
 
@@ -94,9 +95,11 @@ lib/
   date.ts / format.ts   calendar-grid + ₹/date display helpers
   inventory/            listing schema, owner projection, watermark, media validation
   discovery/            Viewer-facing card / filter / detail shapes + client
+  requests/             Request resource shapes, status labels, available_actions, client
   env.ts / env.server.ts  zod-validated environment
 components/inventory/   the Add Hoarding wizard, media uploader, map pin picker, PB-02 table
 components/discovery/   VW-01 filters + grid, VW-02 map, VW-03 detail + carousel
+components/requests/    VW-04 submit modal, VW-05 my-requests, PB-06 inbox, PB-07 drawer
 supabase/               config.toml, migrations/, seed.sql
 tests/                  unit/ integration/ e2e/
 docs/                   product & technical specification

@@ -28,7 +28,8 @@
     "provision:admin": "node scripts/provision-admin.mjs",
     "verify:authz": "node scripts/verify-authz.mjs",
     "verify:inventory": "node scripts/verify-inventory.mjs",
-    "verify:discovery": "node scripts/verify-discovery.mjs"
+    "verify:discovery": "node scripts/verify-discovery.mjs",
+    "verify:requests": "node scripts/verify-requests.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
