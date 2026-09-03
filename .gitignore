@@ -50,3 +50,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# DB backups (scripts/db-backup.mjs)
+/backups/
+
+# Local demo/sample imagery — belongs in Supabase Storage (Phase 5), not git
+/billboards/

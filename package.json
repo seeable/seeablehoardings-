@@ -19,7 +19,11 @@
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "db:types": "supabase gen types typescript --local > lib/supabase/database.types.ts"
+    "db:types": "supabase gen types typescript --local > lib/supabase/database.types.ts",
+    "db:types:remote": "supabase gen types typescript --project-id $SUPABASE_PROJECT_REF > lib/supabase/database.types.ts",
+    "db:push": "supabase db push",
+    "db:test": "supabase test db",
+    "db:backup": "node scripts/db-backup.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

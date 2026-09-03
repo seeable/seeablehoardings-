@@ -1,4 +1,7 @@
--- SEEABLE Hoardings — local seed data.
--- Populated in Phase 1 (hoarding_types — IMPLEMENTATION-PLAN.md §Phase 1 step 15)
--- and Phase 12 (deterministic test dataset — ~60 listings, requests in every state).
--- Runs automatically on `supabase db reset`.
+-- SEEABLE Hoardings — local seed data (runs on `supabase db reset`).
+--
+-- hoarding_types is REFERENCE data, not seed data — it lives in the migration
+-- 20260903121200_seed_hoarding_types.sql (it has no client write policy).
+--
+-- This file is reserved for Phase 12's deterministic test dataset — ~60
+-- listings, requests in every state, for local E2E + demo. Empty until then.

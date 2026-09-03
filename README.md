@@ -4,7 +4,7 @@ A two-sided marketplace connecting hoarding **Publishers** (inventory owners) wi
 
 - **Product spec:** [`docs/`](docs/) — PRD/BRD, module specs, architecture, database design, API spec, UI/UX (9 files).
 - **Build roadmap:** [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md) — 14 phases, every decision resolved.
-- **Status:** Phase 0 (project foundation) complete.
+- **Status:** Phase 1 (database) complete — full schema applied to the live Supabase project; Phase 2 (auth) next.
 
 ## Stack
 
@@ -43,7 +43,10 @@ Until you create a Supabase project, `.env.local` ships with placeholder values 
    SUPABASE_SERVICE_ROLE_KEY=<service_role key>
    SUPABASE_PROJECT_REF=<ref>
    ```
-4. Migrations land in `supabase/migrations/` in Phase 1. Apply them with `npx supabase db push` (remote) or `npx supabase start && npx supabase db reset` (local Docker).
+4. Migrations are in `supabase/migrations/` (Phase 1). Apply with `npm run db:push` (remote — needs `supabase link` first) or `npx supabase start && npx supabase db reset` (local Docker). The Phase 1 set is already applied to the shared dev project.
+5. Regenerate DB types after a schema change: `npm run db:types` (local Docker) or `npm run db:types:remote` (needs `SUPABASE_PROJECT_REF` + `SUPABASE_ACCESS_TOKEN`).
+6. Database tests: `npm run db:test` (pgTAP via `supabase test db`, needs Docker) — `supabase/tests/*.sql`.
+7. Backups: `npm run db:backup` (see `scripts/db-backup.mjs` for the `SUPABASE_DB_URL` form).
 
 ### Deploying to Cloudflare
 
