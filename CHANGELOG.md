@@ -1,5 +1,63 @@
 # Changelog
 
+## Phase 3 — Access Control & Tenant Isolation
+
+RLS is proven to be the enforcement layer, and the thin `/api/v1` facade
+pattern is established. No business logic in the route layer — it adds shape
+and error ergonomics only.
+
+- **`lib/api/facade.ts` `defineRoute({ auth, role, query, body, handler })`** —
+  one builder: adopt/validate `X-Request-Id` → auth (401) → role (403
+  `FORBIDDEN_ROLE`) → rate-limit (429 + `Retry-After`) → validate query (400
+  `INVALID_FILTER`/`INVALID_PAGINATION`) + body (422 with the full `fields` map,
+  §8.2) → run as the caller's JWT → `pgErrorToApiError` (§8.5/D7) → envelope →
+  one PII-safe log line. (Consolidates the plan's `withAuth`/`withRole`/… HOFs
+  into a config object.)
+- **`lib/api/pagination.ts`** — `parsePagination` (bounds → `INVALID_PAGINATION`,
+  a past-the-end page is a valid empty result), `paginationMeta` (§9.2 shape,
+  note the `pageSize` → `page_size` casing shift).
+- **`lib/api/ratelimit.ts`** — in-memory token-bucket SCAFFOLD (works for local
+  dev / one isolate; Phase 11 backs it with Cloudflare KV + real numbers).
+- **`lib/api/authz.ts`** — the §6.5 403-vs-404 discipline: `requireRow` turns
+  zero-rows-under-RLS into `RESOURCE_NOT_FOUND` without deciding "exists vs not
+  yours"; `forbidNotOwner` for the visible-but-refused case.
+- **Full error taxonomy** — all of §8.3 + §8.4 (media, idempotency, OTP, jobs,
+  pagination/filter) with safe `ERROR_MESSAGE` defaults in `lib/api/errors.ts`.
+  `lib/db/errors.ts` slimmed to share them; added `PGRST116`→404, `PGRST301`→401.
+- **`lib/log.ts`** — allow-list (not deny-list) structured logger (§35.3):
+  `request_id`, method, path *template*, status, latency, `error_code`, `role`,
+  `user_id` (UUID), `sqlstate`. A token / email / body has no field to go in.
+- **`lib/api/client.ts`** — browser `apiFetch<T>()` / `api.get|post|patch|delete`,
+  unwraps the envelope, throws `ApiClientError {code, requestId, status, …}`,
+  fires `seeable:unauthorized` on 401 (`AuthProvider` re-checks the session).
+- **Reference endpoints** proving the toolkit: `GET /api/v1/notifications`
+  (paginated, RLS-scoped, `?unread=true`), `PATCH /api/v1/notifications/{id}`
+  (`is_read` only — column grant + RLS; a non-owned id → 404), and
+  `GET /api/v1/auth/me` refactored onto `defineRoute`.
+- **Ops:** `scripts/provision-admin.mjs` + `npm run provision:admin` +
+  `docs/runbooks/admin-provisioning.md` (there is no self-service ADMIN —
+  `handle_new_user` downgrades forged roles; `profiles.role` is not in the
+  column grant). `scripts/assert-no-secrets-in-bundle.mjs` + a CI step after
+  build.
+
+### Tests
+
+- `tests/unit/facade.test.ts`, `log.test.ts`, `error-taxonomy.test.ts` — 62
+  unit tests total (pagination bounds/meta math, `zodFields` reports every
+  field, token bucket, 403/404 helpers, logger allow-list, every §8 code has a
+  status + safe message).
+- **`scripts/verify-authz.mjs`** (`npm run verify:authz [-- --api]`) — the
+  standing §6.6 matrix + §6.5 split against the live project, **both** via
+  direct `supabase.from()`/`.rpc()` and via the facade. **31/31 pass**, incl.:
+  self role-escalation blocked by the column grant; Publisher B can't
+  read/edit/submit Publisher A's draft (RISK-6); Admin can't browse `requests`
+  but can read all hoardings; Viewer can't confirm; notification recipient
+  isolation via facade + direct; anon → 401 envelope with `X-Request-Id`; a
+  well-formed client `X-Request-Id` is adopted; **Realtime**: a Viewer's
+  `requests` subscription never delivers another user's row.
+- Bundle scan: 19 client files, no service-role material. lint / typecheck /
+  build / 5 e2e / live auth-flow all green.
+
 ## Phase 2 — Authentication (Supabase Auth, direct)
 
 Users register and sign in entirely through Supabase Auth from the client

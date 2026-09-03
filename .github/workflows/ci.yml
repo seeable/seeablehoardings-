@@ -37,6 +37,8 @@ jobs:
         run: npm run test
       - name: Build
         run: npm run build
+      - name: Assert no secrets in client bundle
+        run: node scripts/assert-no-secrets-in-bundle.mjs
 
   e2e:
     runs-on: ubuntu-latest

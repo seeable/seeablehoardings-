@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { createClient } from "@/lib/supabase/client";
+import { UNAUTHORIZED_EVENT } from "@/lib/api/client";
 import type { SessionUser } from "@/lib/auth/session";
 
 interface AuthContextValue {
@@ -51,7 +52,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         void refresh();
       }
     });
-    return () => data.subscription.unsubscribe();
+    // A 401 from any /api/v1 call means the cookie session is stale — re-check.
+    const onUnauthorized = () => void refresh();
+    window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+    return () => {
+      data.subscription.unsubscribe();
+      window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+    };
   }, [refresh]);
 
   return (

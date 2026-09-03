@@ -4,7 +4,7 @@ A two-sided marketplace connecting hoarding **Publishers** (inventory owners) wi
 
 - **Product spec:** [`docs/`](docs/) — PRD/BRD, module specs, architecture, database design, API spec, UI/UX (9 files).
 - **Build roadmap:** [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md) — 14 phases, every decision resolved.
-- **Status:** Phase 2 (authentication) complete — Supabase Auth + Google (Viewer) sign-in, `/api/v1/auth/me`, route guards, AUTH-01→04 screens. Phase 4 (design system) or Phase 5 (inventory) next.
+- **Status:** Phase 3 (access control) complete — `/api/v1` facade toolkit (`defineRoute`), full error taxonomy, PII-safe logging, RLS/isolation proven end-to-end (`npm run verify:authz`). Phase 4 (design system) or Phase 5 (inventory) next.
 
 ## Stack
 
@@ -59,17 +59,20 @@ Until you create a Supabase project, `.env.local` ships with placeholder values 
 
 ## Scripts
 
-| Script                                          | What it does                                                  |
-| ----------------------------------------------- | ------------------------------------------------------------- |
-| `npm run dev`                                   | Next dev server                                               |
-| `npm run build`                                 | Production build (`next build`)                               |
-| `npm run lint`                                  | ESLint (flat config)                                          |
-| `npm run typecheck`                             | `tsc --noEmit`                                                |
-| `npm run test`                                  | Vitest unit/integration tests                                 |
-| `npm run test:e2e`                              | Playwright E2E (builds + serves the app)                      |
-| `npm run format`                                | Prettier write                                                |
-| `npm run cf:build` / `cf:preview` / `cf:deploy` | OpenNext → Cloudflare                                         |
-| `npm run db:types`                              | Regenerate `lib/supabase/database.types.ts` from the local DB |
+| Script                                          | What it does                                                            |
+| ----------------------------------------------- | ----------------------------------------------------------------------- |
+| `npm run dev`                                   | Next dev server                                                         |
+| `npm run build`                                 | Production build (`next build`)                                         |
+| `npm run lint`                                  | ESLint (flat config)                                                    |
+| `npm run typecheck`                             | `tsc --noEmit`                                                          |
+| `npm run test`                                  | Vitest unit/integration tests                                           |
+| `npm run test:e2e`                              | Playwright E2E (builds + serves the app)                                |
+| `npm run format`                                | Prettier write                                                          |
+| `npm run cf:build` / `cf:preview` / `cf:deploy` | OpenNext → Cloudflare                                                   |
+| `npm run db:types`                              | Regenerate `lib/supabase/database.types.ts` from the local DB           |
+| `npm run verify:authz [-- --api]`               | RLS / permission-matrix harness against the live project                |
+| `npm run check:bundle`                          | Assert no service-role material in the client bundle (post-build)       |
+| `npm run provision:admin -- <email>`            | Promote an already-registered account to `ADMIN` (see `docs/runbooks/`) |
 
 ## Project structure
 

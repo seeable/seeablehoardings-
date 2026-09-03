@@ -1,22 +1,16 @@
-import { route, ok } from "@/lib/api/envelope";
-import { ApiError } from "@/lib/api/errors";
+import { defineRoute } from "@/lib/api/facade";
 import { getSessionUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/v1/auth/me — api-specification.md §5.11.
- * The single source of role + verification gates for every client surface.
- * Auth endpoints are otherwise NOT built (spec §5.2) — the client uses
- * `supabase.auth.*` directly.
+ * The single source of role + verification gates. The facade guarantees a
+ * session (`auth: true`), so getSessionUser() is non-null here.
  */
-export const GET = route(async () => {
-  const user = await getSessionUser();
-  if (!user) {
-    throw new ApiError("AUTH_REQUIRED", "You are not signed in.", 401);
-  }
-
-  const res = ok(user);
-  res.headers.set("Cache-Control", "no-store"); // §5.11 — never stale
-  return res;
+export const GET = defineRoute({
+  path: "/api/v1/auth/me",
+  auth: true,
+  rateLimit: { perMinute: 120 }, // §5.11 RECOMMENDED
+  handler: async () => (await getSessionUser())!,
 });

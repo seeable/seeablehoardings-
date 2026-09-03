@@ -23,7 +23,10 @@
     "db:types:remote": "supabase gen types typescript --project-id $SUPABASE_PROJECT_REF > lib/supabase/database.types.ts",
     "db:push": "supabase db push",
     "db:test": "supabase test db",
-    "db:backup": "node scripts/db-backup.mjs"
+    "db:backup": "node scripts/db-backup.mjs",
+    "check:bundle": "node scripts/assert-no-secrets-in-bundle.mjs",
+    "provision:admin": "node scripts/provision-admin.mjs",
+    "verify:authz": "node scripts/verify-authz.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
