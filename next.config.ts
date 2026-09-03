@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Don't append Next's agent-rules block to CLAUDE.md (that file is
+  // developer-owned). Next 16 upgrade notes: node_modules/next/dist/docs/.
+  agentRules: false,
   // Supabase Storage public bucket is the only remote image source at MVP.
   // The concrete host is added once the Supabase project URL is known.
   images: {
