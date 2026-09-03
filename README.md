@@ -4,7 +4,7 @@ A two-sided marketplace connecting hoarding **Publishers** (inventory owners) wi
 
 - **Product spec:** [`docs/`](docs/) — PRD/BRD, module specs, architecture, database design, API spec, UI/UX (9 files).
 - **Build roadmap:** [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md) — 14 phases, every decision resolved.
-- **Status:** Phase 7 (request/booking engine) complete — VW-04 Submit Request (modal, first-class `REQUEST_DATE_CONFLICT` state), VW-05 My Requests, PB-06 Incoming Requests (SLA countdown), PB-07 Request Detail (accept/reject/complete), all live via Realtime. Full `REQUESTED → CONFIRMED/REJECTED/EXPIRED → LIVE → COMPLETED` lifecycle; every transition is a `SECURITY DEFINER` function (no client writes `status`). `npm run verify:requests` — 25/25 live, including 8 rounds of the concurrent-confirm race (RISK-4): exactly one winner every time. Phase 8 (Publisher platform) next.
+- **Status:** Phase 8 (Publisher platform) complete — PB-01 Dashboard (metric cards + "needs attention" + activity, brand-new-Publisher prompt, suspended banner), PB-08 Verification (submit → pending → verified/rejected, `publisher-private` document bucket), SH-01 Account (`/account`, role-aware). `verification_status` gains `PENDING`; `submit_publisher_verification()` is the Publisher-initiated half of the OWNER-004 flow. `npm run verify:publisher` — 16/16 live incl. the verification-document isolation checks. Phase 9 (Admin platform) next.
 
 ## Stack
 
@@ -74,6 +74,7 @@ Until you create a Supabase project, `.env.local` ships with placeholder values 
 | `npm run verify:inventory`                      | Inventory gates / visibility / edit-freeze harness against the live project |
 | `npm run verify:discovery`                      | Discovery filters / INVENTORY-003 / disintermediation payload harness (live) |
 | `npm run verify:requests`                       | Request Engine lifecycle + concurrency (RISK-4) harness against the live project |
+| `npm run verify:publisher`                      | Publisher verification / OWNER-004 / suspended-UX / document isolation (live) |
 | `npm run check:bundle`                          | Assert no service-role material in the client bundle (post-build)       |
 | `npm run provision:admin -- <email>`            | Promote an already-registered account to `ADMIN` (see `docs/runbooks/`) |
 
@@ -96,10 +97,12 @@ lib/
   inventory/            listing schema, owner projection, watermark, media validation
   discovery/            Viewer-facing card / filter / detail shapes + client
   requests/             Request resource shapes, status labels, available_actions, client
+  publisher/            profile / summary derivation / verification shapes + client
   env.ts / env.server.ts  zod-validated environment
 components/inventory/   the Add Hoarding wizard, media uploader, map pin picker, PB-02 table
 components/discovery/   VW-01 filters + grid, VW-02 map, VW-03 detail + carousel
 components/requests/    VW-04 submit modal, VW-05 my-requests, PB-06 inbox, PB-07 drawer
+components/publisher/   PB-01 dashboard, PB-08 verification form + banner, SH-01 account
 supabase/               config.toml, migrations/, seed.sql
 tests/                  unit/ integration/ e2e/
 docs/                   product & technical specification

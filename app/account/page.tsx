@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
-import { PhasePlaceholder } from "@/components/phase-placeholder";
+import { getSessionUser } from "@/lib/auth/session";
+import { AccountSettings } from "@/components/publisher/account-settings";
 
 export const metadata: Metadata = { title: "Account" };
+export const dynamic = "force-dynamic";
 
-export default function AccountPage() {
-  return (
-    <PhasePlaceholder
-      title="Account"
-      screen="Account & profile settings (SH-01)"
-      phase={8}
-    />
-  );
+export default async function AccountPage() {
+  const user = await getSessionUser();
+  return <AccountSettings role={user?.role ?? "VIEWER"} />;
 }

@@ -29,7 +29,8 @@
     "verify:authz": "node scripts/verify-authz.mjs",
     "verify:inventory": "node scripts/verify-inventory.mjs",
     "verify:discovery": "node scripts/verify-discovery.mjs",
-    "verify:requests": "node scripts/verify-requests.mjs"
+    "verify:requests": "node scripts/verify-requests.mjs",
+    "verify:publisher": "node scripts/verify-publisher.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

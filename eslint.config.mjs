@@ -42,6 +42,7 @@ const config = [
     // Sanctioned service-role usage sites are exempt from the rule above.
     files: [
       "app/api/v1/hoardings/**/media/**",
+      "app/api/v1/publishers/me/verification/**",
       "lib/supabase/admin.ts",
       "scripts/**",
     ],

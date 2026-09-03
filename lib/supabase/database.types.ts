@@ -617,6 +617,7 @@ export type Database = {
       publisher_profiles: {
         Row: {
           business_name: string | null
+          business_type: string | null
           created_at: string
           id: string
           suspended: boolean
@@ -624,12 +625,15 @@ export type Database = {
           suspended_by: string | null
           suspension_reason: string | null
           updated_at: string
+          verification_document_path: string | null
           verification_rejection_reason: string | null
           verification_status: string
+          verification_submitted_at: string | null
           verified_at: string | null
         }
         Insert: {
           business_name?: string | null
+          business_type?: string | null
           created_at?: string
           id: string
           suspended?: boolean
@@ -637,12 +641,15 @@ export type Database = {
           suspended_by?: string | null
           suspension_reason?: string | null
           updated_at?: string
+          verification_document_path?: string | null
           verification_rejection_reason?: string | null
           verification_status?: string
+          verification_submitted_at?: string | null
           verified_at?: string | null
         }
         Update: {
           business_name?: string | null
+          business_type?: string | null
           created_at?: string
           id?: string
           suspended?: boolean
@@ -650,8 +657,10 @@ export type Database = {
           suspended_by?: string | null
           suspension_reason?: string | null
           updated_at?: string
+          verification_document_path?: string | null
           verification_rejection_reason?: string | null
           verification_status?: string
+          verification_submitted_at?: string | null
           verified_at?: string | null
         }
         Relationships: [
@@ -1399,6 +1408,10 @@ export type Database = {
           to_status: string
         }[]
       }
+      get_verification_document_path: {
+        Args: { p_publisher_id: string }
+        Returns: string
+      }
       haversine_km: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
@@ -1497,6 +1510,7 @@ export type Database = {
         Args: { p_publisher_id: string; p_reason?: string }
         Returns: {
           business_name: string | null
+          business_type: string | null
           created_at: string
           id: string
           suspended: boolean
@@ -1504,8 +1518,10 @@ export type Database = {
           suspended_by: string | null
           suspension_reason: string | null
           updated_at: string
+          verification_document_path: string | null
           verification_rejection_reason: string | null
           verification_status: string
+          verification_submitted_at: string | null
           verified_at: string | null
         }
         SetofOptions: {
@@ -1690,10 +1706,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      suspend_publisher: {
-        Args: { p_publisher_id: string; p_reason?: string }
+      submit_publisher_verification: {
+        Args: {
+          p_business_name: string
+          p_business_type: string
+          p_document_path: string
+        }
         Returns: {
           business_name: string | null
+          business_type: string | null
           created_at: string
           id: string
           suspended: boolean
@@ -1701,8 +1722,35 @@ export type Database = {
           suspended_by: string | null
           suspension_reason: string | null
           updated_at: string
+          verification_document_path: string | null
           verification_rejection_reason: string | null
           verification_status: string
+          verification_submitted_at: string | null
+          verified_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "publisher_profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      suspend_publisher: {
+        Args: { p_publisher_id: string; p_reason?: string }
+        Returns: {
+          business_name: string | null
+          business_type: string | null
+          created_at: string
+          id: string
+          suspended: boolean
+          suspended_at: string | null
+          suspended_by: string | null
+          suspension_reason: string | null
+          updated_at: string
+          verification_document_path: string | null
+          verification_rejection_reason: string | null
+          verification_status: string
+          verification_submitted_at: string | null
           verified_at: string | null
         }
         SetofOptions: {
@@ -1716,6 +1764,7 @@ export type Database = {
         Args: { p_publisher_id: string }
         Returns: {
           business_name: string | null
+          business_type: string | null
           created_at: string
           id: string
           suspended: boolean
@@ -1723,8 +1772,10 @@ export type Database = {
           suspended_by: string | null
           suspension_reason: string | null
           updated_at: string
+          verification_document_path: string | null
           verification_rejection_reason: string | null
           verification_status: string
+          verification_submitted_at: string | null
           verified_at: string | null
         }
         SetofOptions: {
@@ -1738,6 +1789,7 @@ export type Database = {
         Args: { p_publisher_id: string }
         Returns: {
           business_name: string | null
+          business_type: string | null
           created_at: string
           id: string
           suspended: boolean
@@ -1745,8 +1797,10 @@ export type Database = {
           suspended_by: string | null
           suspension_reason: string | null
           updated_at: string
+          verification_document_path: string | null
           verification_rejection_reason: string | null
           verification_status: string
+          verification_submitted_at: string | null
           verified_at: string | null
         }
         SetofOptions: {

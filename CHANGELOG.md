@@ -1,5 +1,93 @@
 # Changelog
 
+## Phase 8 — Publisher Platform
+
+Gives a Publisher a coherent home: a dashboard, a verification submission flow,
+and account settings. The Admin side of verification (`verify_publisher` /
+`reject_publisher_verification`) and the OWNER-004 submit gate were built in
+Phase 1 — this adds the Publisher-initiated half.
+
+- **DB — `20260908120000_publisher_platform`**:
+  - `verification_status` CHECK gains `'PENDING'` — PB-08's "under review" state.
+    Additive: `computeGates` / `submit_hoarding_for_review` /
+    `public_hoarding_listings` all key off `= 'VERIFIED'`, so `PENDING` behaves
+    exactly like `UNVERIFIED` for every gate.
+  - `publisher_profiles` + `business_type`, `verification_document_path`,
+    `verification_submitted_at`.
+  - `publisher-private` storage bucket — the verification document, isolated the
+    same way as `hoarding-private` (no `storage.objects` policy at all —
+    service-role write only, Admin-only read).
+  - `submit_publisher_verification(business_name, business_type, document_path)`
+    — `SECURITY DEFINER`, operates on the caller's own row, from `UNVERIFIED` /
+    `REJECTED` only (`PUBLISHER_VERIFICATION_STATE_CONFLICT` otherwise),
+    suspended → `PUBLISHER_SUSPENDED`.
+  - `get_verification_document_path(publisher_id)` — self-or-Admin accessor
+    (the Phase 9 review UI mints a signed URL from it).
+- **Backend** (`lib/publisher/`):
+  - `GET/PATCH /api/v1/profiles/me` — the shared contact-profile resource for
+    both roles (SH-01); `full_name` / `phone` / `email` / `city` only.
+  - `GET/PATCH /api/v1/publishers/me` — api-spec §22.2 shape (+
+    `can_submit_listings`); PATCH spans `profiles` + `publisher_profiles`.
+  - `GET /api/v1/publishers/me/summary` — §22.6. Route-level counts over the
+    Publisher's own `hoardings` / `requests` (`deriveSummary`, pure + unit-tested)
+    — no new analytics endpoint. `confirmed_value` is `SUM(amount_agreed WHERE
+    recorded)`, labelled not-revenue.
+  - `POST /api/v1/publishers/me/verification` — multipart, service-role handler
+    (magic-byte sniff PDF/JPEG/PNG/WebP, 8 MB cap, upload to `publisher-private`,
+    `rpc(submit_publisher_verification)`, object removed if the RPC rejects). Its
+    path is added to the eslint service-role allowlist.
+- **Frontend** (`components/publisher/`):
+  - **PB-01** `DashboardView` — 4 metric cards (Active listings / Pending
+    approval → deep-link / Open requests → deep-link / Confirmed this month),
+    "Needs your attention" (`selectNeedsAttention` — SLA-window requests +
+    Admin-rejected listings, most urgent first) + "Recent activity". Brand-new
+    Publisher → a single "Add your first hoarding" prompt, not four zero cards.
+    Suspended → `danger-50` banner. Realtime via `useRequestRealtime`.
+  - **PB-08** `VerificationForm` + `VerificationBanner` — business name / type /
+    document; states not-started → pending → verified → rejected(+reason,
+    resubmit). Slim `warning-50` banner on PB-01 / PB-02 / the wizard.
+  - **SH-01** `AccountSettings` (`/account`, role-aware) — settings nav
+    (Profile · Security · Verification for Publisher) + panels. Publisher edits
+    Business Name; Viewer edits Full Name.
+
+### Deviations / calls
+
+- **`PENDING` added to the enum** rather than a separate "submitted" flag —
+  matches PB-08's four states, and every existing gate already treats
+  not-`VERIFIED` uniformly.
+- **PB-08 collects business name / type / document only** — contact fields are
+  managed in SH-01 (the plan's PB-08 line scopes it this way; `04-Screens-Publisher.md`
+  lists contact fields on the form, predating SH-01 as a separate screen).
+- **`/api/v1/profiles/me`** is the shared contact facade; api-spec §23.5's
+  `/api/v1/viewers/me` is folded into it.
+- **Dashboard fetches its own recent-notifications list** rather than calling
+  `useNotifications()` — the notification bell owns that Realtime channel and a
+  second subscriber on the same topic throws. The feed still refreshes on
+  `reload`.
+- **"1–2 business days"** verification copy is illustrative, not a committed SLA
+  (`04-Screens-Publisher.md` PB-08 UX ASSUMPTION).
+
+### Tests
+
+- `tests/unit/publisher.test.ts` — +7 (`deriveSummary` — `live_in_search`,
+  `confirmed_value`, `confirmed_this_month` in IST; `selectNeedsAttention` —
+  SLA window + ordering + rejected-listing rows). **186 unit total.**
+- **`scripts/verify-publisher.mjs`** (`npm run verify:publisher`) — **16/16**
+  live: OWNER-004 (unverified → submit blocked; verified → the gate passes);
+  the PB-08 lifecycle (submit → `PENDING`; resubmit-while-pending conflict;
+  Admin reject → resubmit; Admin verify); suspended-Publisher rules — submit +
+  verification blocked, but `mark_request_completed` on an existing Confirmed
+  request still works (ADMIN-002); **the verification document is unreadable by
+  a Viewer or another Publisher** (`publisher_profiles` RLS +
+  `get_verification_document_path` owner gate + the policy-less bucket);
+  `PENDING` → `publisher_is_verified = false`.
+- **`tests/e2e/publisher-verification.spec.ts`** (opt-in, `SEEABLE_E2E_LIVE=1`) —
+  brand-new Publisher signup → "Add your first hoarding" dashboard → PB-08
+  submit with a document → pending → Admin verify → banner clears. Passing.
+- `verify:requests` 25/25, `verify:inventory` 23/23, `verify:discovery` 15/15,
+  `verify:authz` 26/26 still green. lint / typecheck / `next build` / `cf:build`
+  (maplibre-gl absent from the server bundle) / 15 e2e green.
+
 ## Phase 7 — Request / Booking Engine
 
 The full booking-lite lifecycle. A Viewer submits a date request; the Publisher
