@@ -800,6 +800,7 @@ export type Database = {
           booked_ranges: Json | null
           city: string | null
           created_at: string | null
+          description: string | null
           id: string | null
           latitude: number | null
           locality: string | null
@@ -831,6 +832,7 @@ export type Database = {
           attributes: Json | null
           city: string | null
           created_at: string | null
+          description: string | null
           id: string | null
           latitude: number | null
           locality: string | null
@@ -1490,22 +1492,34 @@ export type Database = {
         Args: {
           p_center_lat?: number
           p_center_lng?: number
-          p_end_date?: string
-          p_max_price?: number
+          p_city?: string
+          p_limit?: number
+          p_max_price_monthly?: number
+          p_offset?: number
           p_radius_km?: number
-          p_start_date?: string
+          p_sort?: string
           p_type_code?: string
         }
         Returns: {
+          address_text: string
+          attributes: Json
           city: string
+          created_at: string
           distance_km: number
           id: string
           latitude: number
           locality: string
           longitude: number
+          next_available_date: string
           price: number
           price_unit: string
+          publisher_business_name: string
+          publisher_is_verified: boolean
+          site_intelligence: Json
+          site_intelligence_complete: boolean
+          size: string
           title: string
+          total_count: number
           type_code: string
         }[]
       }

@@ -4,6 +4,7 @@ import { requireRow } from "@/lib/api/authz";
 import { pgErrorToApiError } from "@/lib/db/errors";
 import { asJson, updateHoardingSchema } from "@/lib/inventory/schema";
 import { buildOwnerView } from "@/lib/inventory/projection";
+import { haversineKm, toPublicDetail } from "@/lib/inventory/public-view";
 import type { UpdateHoardingInput } from "@/lib/inventory/schema";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -22,7 +23,7 @@ export const GET = defineRoute<undefined, undefined, { id: string }>({
   path: "/api/v1/hoardings/{id}",
   auth: true,
   rateLimit: { perMinute: 120 },
-  handler: async ({ supabase, user, params, logResource }) => {
+  handler: async ({ supabase, user, params, searchParams, logResource }) => {
     if (!UUID.test(params.id)) throw ApiError.of("VALIDATION_ERROR");
     logResource(params.id);
 
@@ -40,13 +41,36 @@ export const GET = defineRoute<undefined, undefined, { id: string }>({
       return { data: { hoarding: await buildOwnerView(supabase, row) } };
     }
 
-    const { data: pub, error: pubErr } = await supabase
-      .from("public_hoarding_detail")
-      .select("*")
-      .eq("id", params.id)
-      .maybeSingle();
+    // Non-owner: the disintermediation-safe projection. A paused/delisted row
+    // exists in `hoardings` but not in the view -> 404 (§6.5, no oracle).
+    const [{ data: pub, error: pubErr }, { data: types }] = await Promise.all([
+      supabase
+        .from("public_hoarding_detail")
+        .select("*")
+        .eq("id", params.id)
+        .maybeSingle(),
+      supabase.from("hoarding_types").select("code, display_name"),
+    ]);
     if (pubErr) throw pgErrorToApiError(pubErr);
-    return { data: { hoarding: requireRow(pub, "HOARDING_NOT_FOUND") } };
+    const detail = requireRow(pub, "HOARDING_NOT_FOUND");
+
+    const qLat = Number(searchParams.get("latitude"));
+    const qLng = Number(searchParams.get("longitude"));
+    const distanceKm =
+      Number.isFinite(qLat) &&
+      Number.isFinite(qLng) &&
+      searchParams.has("latitude") &&
+      detail.latitude != null &&
+      detail.longitude != null
+        ? haversineKm(qLat, qLng, detail.latitude, detail.longitude)
+        : null;
+
+    const typeName = new Map((types ?? []).map((t) => [t.code, t.display_name]));
+    return {
+      data: {
+        hoarding: toPublicDetail(supabase, detail, { typeName, distanceKm }),
+      },
+    };
   },
 });
 

@@ -113,6 +113,23 @@ export const availabilityQuerySchema = z
   })
   .strict();
 
+/** GET /api/v1/hoardings — the Viewer discovery filter set (api-spec §10.2).
+ *  Values arrive as strings; `.strict()` turns an unknown param into
+ *  INVALID_FILTER. Repeated `type` is caught in the handler (§10.2). */
+export const discoverQuerySchema = z
+  .object({
+    type: z.string().max(64).optional(),
+    city: z.string().max(120).optional(),
+    latitude: z.string().optional(),
+    longitude: z.string().optional(),
+    maxDistance: z.string().optional(),
+    maxPrice: z.string().optional(),
+    sort: z.enum(["newest", "price_asc", "price_desc", "distance"]).optional(),
+    page: z.string().optional(),
+    pageSize: z.string().optional(),
+  })
+  .strict();
+
 export const myHoardingsQuerySchema = z
   .object({
     status: z

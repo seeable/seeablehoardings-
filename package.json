@@ -27,7 +27,8 @@
     "check:bundle": "node scripts/assert-no-secrets-in-bundle.mjs",
     "provision:admin": "node scripts/provision-admin.mjs",
     "verify:authz": "node scripts/verify-authz.mjs",
-    "verify:inventory": "node scripts/verify-inventory.mjs"
+    "verify:inventory": "node scripts/verify-inventory.mjs",
+    "verify:discovery": "node scripts/verify-discovery.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

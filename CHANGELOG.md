@@ -1,5 +1,75 @@
 # Changelog
 
+## Phase 6 — Viewer Discovery
+
+A Viewer browses, filters, and maps the visible catalogue and opens a full
+hoarding detail page. List and map are provably one filtered result set; the
+disintermediation boundary is enforced on the payload (RISK-16).
+
+- **DB — `20260906120000_search_discovery`**: `search_available_hoardings()`
+  rebuilt as the one query surface for the whole Viewer experience.
+  - **`SECURITY DEFINER SET search_path = public`** — the api-spec §11.2
+    "REQUIRED fix". `visible_hoardings`' WHERE clause is the INVENTORY-003
+    boundary; running as owner lets it filter every APPROVED row and leaks
+    nothing (returns only public columns + a distance + a date).
+  - New signature: `(p_type_code, p_city, p_center_lat, p_center_lng,
+    p_radius_km, p_max_price_monthly, p_sort, p_limit, p_offset)`. Returns the
+    full `public_hoarding_listings` projection + `distance_km` +
+    `next_available_date` + `total_count` (window count).
+  - Bounding-box prefilter + Haversine; **monthly-normalised** price ceiling
+    (DAY×30, WEEK×4.345); `join hoarding_types … where not is_digital` so a
+    forced-APPROVED digital row could never surface; ordering per api-spec
+    §10.5 (distance when geo, else newest; `id ASC` tiebreak).
+  - `public_hoarding_listings` / `public_hoarding_detail` recreated with
+    `description` added (VW-03 needs it).
+- **Backend** — `GET /api/v1/hoardings` (new — thin over the rpc;
+  `GEO_PARAMS_INCOMPLETE` on a partial lat/lng/maxDistance triad, `INVALID_FILTER`
+  on an unknown or repeated param; `meta.pagination` + `meta.filters_applied`).
+  The non-owner branch of `GET /api/v1/hoardings/{id}` now returns the §11.2
+  public representation with **Site Intelligence partial-omission**
+  (`lib/inventory/public-view.ts` — a footfall of 0 and an unknown footfall
+  never look alike; a fully-empty panel is omitted). `distance_km` from
+  optional `latitude`/`longitude` query params.
+- **Frontend** (`components/discovery/`, `lib/discovery/`) — VW-01
+  (`/discover`, replace placeholder): type chips + budget + "use my location" +
+  radius + sort, card grid, "Load more", per-state empties, URL-driven filters
+  (shareable / back-safe). VW-02: `HoardingMap` (lazy MapLibre, `ssr:false` —
+  never in a server bundle; GeoJSON clustering, `gold-700` points / `ink-900`
+  clusters, click-to-select synced with the side list, tile-failure fallback,
+  precise pins). VW-03 (`/discover/[id]`): `PhotoCarousel` (keyboard, alt
+  text, broken-image fallback), identity row (name + Verified badge, **never a
+  link**), SI panel (`<dl>`, partial-omission), specs, description,
+  read+select Availability Calendar that updates the CTA label; sticky CTA is
+  a Phase-7 stub. A paused/removed listing renders "no longer available", not
+  a 404 page (docs/03 VW-03).
+
+### Deviations / calls
+
+- **`sort` implemented** (`newest` / `price_asc` / `price_desc`; `distance`
+  auto when geo) — doc 03 VW-01 + the plan want the control; api-spec §10.5
+  defers price-sort to FUTURE. Cheap `ORDER BY` branch, noted.
+- **`type` is single-select** (api-spec §10.2 — the rpc takes one code);
+  repeated `type` → `INVALID_FILTER`.
+- **No date filter** in general search (api-spec §10.4 — beyond the approved
+  MVP filter set; availability is the detail-page calendar).
+
+### Tests
+
+- `tests/unit/discovery.test.ts` — +12 (`pruneSiteIntelligence` keeps a 0,
+  drops null/""; `nextAvailableDate` composes blocks + bookings; `haversineKm`;
+  `toDiscoverCard` carries only `business_name` + `is_verified`;
+  `filtersToSearchParams` only writes a complete geo triad). **161 unit total.**
+- **`scripts/verify-discovery.mjs`** (`npm run verify:discovery`) — **15/15**
+  live: INVENTORY-003 (paused / draft / digital all excluded); type AND budget
+  combine; distance radius + ascending `distance_km`; `total_count` is the full
+  match set not the page; `price_asc`; **the disintermediation payload test
+  (RISK-16)** — no phone/email/`full_name`/`publisher_id` via the search RPC
+  **or** a direct `public_hoarding_detail` select; `description` + `media`
+  present; a paused listing is absent from `public_hoarding_detail`.
+- `verify:inventory` 23/23, `verify:authz` 26/26 still green. lint / typecheck
+  / `next build` / 15 e2e green. maplibre-gl confirmed absent from the server
+  bundle.
+
 ## Phase 5 — Inventory Module
 
 A Publisher creates, prices, photographs (watermarked), locates, and submits a
