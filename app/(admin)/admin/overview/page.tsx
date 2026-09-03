@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import { PhasePlaceholder } from "@/components/phase-placeholder";
+import { DesktopOnly } from "@/components/admin/desktop-only-notice";
+import { OverviewView } from "@/components/admin/overview-view";
 
 export const metadata: Metadata = { title: "Overview" };
 
-export default function AdminOverview() {
+export default function AdminOverviewPage() {
   return (
-    <PhasePlaceholder
-      title="Overview"
-      screen="The admin overview dashboard (AD-01)"
-      phase={9}
-    />
+    <DesktopOnly>
+      <OverviewView />
+    </DesktopOnly>
   );
 }

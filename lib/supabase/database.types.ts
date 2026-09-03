@@ -1234,9 +1234,13 @@ export type Database = {
       admin_dashboard_summary: {
         Args: never
         Returns: {
+          active_publishers: number
           approved_listings: number
           confirmed_requests: number
+          live_campaigns: number
+          live_in_search_listings: number
           pending_listings: number
+          pending_verifications: number
           request_to_confirmation_rate: number
           total_listings: number
           total_publishers: number

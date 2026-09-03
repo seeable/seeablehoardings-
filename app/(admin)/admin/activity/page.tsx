@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
-import { PhasePlaceholder } from "@/components/phase-placeholder";
+import { DesktopOnly } from "@/components/admin/desktop-only-notice";
+import { ActivityView } from "@/components/admin/activity-view";
 
 export const metadata: Metadata = { title: "Activity" };
 
-export default function ActivityPage() {
+export default function AdminActivityPage() {
   return (
-    <PhasePlaceholder title="Activity" screen="Activity log (AD-05)" phase={9} />
+    <DesktopOnly>
+      <ActivityView />
+    </DesktopOnly>
   );
 }

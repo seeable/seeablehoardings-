@@ -1,5 +1,103 @@
 # Changelog
 
+## Phase 9 — Admin Platform
+
+The internal moderation console — AD-01..05. Every state-transition function
+(`verify_publisher`, `reject_publisher_verification`, `suspend`/`unsuspend`,
+`approve`/`reject_listing`, `delist`/`relist_hoarding`, `admin_dashboard_summary`)
+and the `admin_actions` audit trail already existed from Phase 1; this phase is
+the thin `/api/v1/admin/*` facade and the five screens.
+
+- **DB — `20260909120000_admin_platform`**:
+  - `admin_dashboard_summary()` recreated with the AD-01 metrics —
+    `pending_verifications`, `live_campaigns`, `active_publishers`,
+    `live_in_search_listings` — alongside every field it already returned.
+    `requests` has no Admin SELECT policy (RISK / D10), so the LIVE-campaign
+    count can *only* come from this `SECURITY DEFINER` aggregate.
+  - `suspend_publisher` / `unsuspend_publisher` gain an "already in that state"
+    guard → `409 PUBLISHER_VERIFICATION_STATE_CONFLICT` on a repeat call
+    (api-spec §26.5) instead of a silent no-op UPDATE. Happy path unchanged.
+- **Backend** (`lib/admin/`): thin facades, `auth: "ADMIN"` (three-layer —
+  facade → route → the function's own `is_admin()`):
+  - `GET /api/v1/admin/dashboard` — §24.4 shape + the AD-01 extras, `no-store`.
+  - `GET /api/v1/admin/hoardings` — the approval queue *and* the full inventory
+    table. `approval_status` repeatable (default `PENDING_REVIEW`), `delisted`,
+    `publisher_id`, `type`, `site_intelligence_complete`; oldest-first; carries
+    `review_flags` + `media_summary` + the full AD-04 review payload.
+  - `POST /api/v1/admin/hoardings/{id}/delist` · `/relist`.
+  - `GET /api/v1/admin/publishers` · `/{id}` — verification queue + full inventory
+    table, `listing_counts`, Admin-only contact fields, `suspended_by` label.
+  - `POST /api/v1/admin/publishers/{id}/verify` · `/reject-verification` ·
+    `/suspend` · `/unsuspend`.
+  - `GET /api/v1/admin/publishers/{id}/verification-document` — mints a 5-minute
+    signed URL via `get_verification_document_path()` (the authz boundary) + the
+    service role (the `publisher-private` bucket has no policy). Path added to the
+    eslint service-role allowlist.
+  - `GET /api/v1/admin/actions` — the AD-05 feed; `action_type` repeatable;
+    `describeAction` renders each row as a plain past-tense sentence.
+  - Existing `approve` / `reject` unchanged.
+  - **Deliberately not built** (approved restrictions): `GET /admin/requests`,
+    `POST /admin/requests/{id}/accept|reject`, `PATCH /admin/hoardings/{id}`,
+    `bulk-approve`, any Admin account-management endpoint.
+- **Frontend** (`components/admin/`, desktop-only — a narrow viewport gets a
+  plain notice):
+  - **AD-01** `OverviewView` — four counts; the three with a working
+    destination deep-link into AD-02 pre-filtered; "Live campaigns" has none.
+    Zero shows as "0".
+  - **AD-02** `PublishersInventoryView` — a `Publishers | Listings` segmented
+    control, per-sub-view status tabs, data tables. Publisher rows: Review →
+    AD-03, Suspend (a `Modal` spelling out ADMIN-002 + an optional reason),
+    Un-suspend (`ConfirmDialog`). Listing rows: Review → AD-04. `?view=` / `?tab=`
+    in the URL (page wrapped in `<Suspense>`).
+  - **AD-03** `PublisherVerificationDrawer` — business info + full contact +
+    document (a signed-URL fetch on click), Verify (one click) / Reject
+    (inline required reason).
+  - **AD-04** `ListingReviewDrawer` — photos + Site Intelligence + specs + the
+    `review_flags`; Approve / Reject (ADMIN-003 reason) for `PENDING_REVIEW`,
+    Delist (optional reason) for approved, Re-list for delisted; DRAFT /
+    REJECTED are read-only.
+  - **AD-05** `ActivityView` — reverse-chron plain-language feed, "Load older".
+  - The three placeholder pages (`/admin/overview`, `/admin/inventory`,
+    `/admin/activity`) now render the real views.
+
+### Deviations / calls
+
+- **`admin/publishers` default filter = none** (the tabs pass explicit statuses),
+  not api-spec §26.2's `UNVERIFIED` default — the `PENDING` state added in Phase 8
+  makes "everything not yet verified" the useful queue default.
+- **AD-04 is enriched in place, not a `DetailView` (VW-03) re-use** — `DetailView`
+  is bound to the Viewer projection; sharing it would be a large refactor for
+  little gain. The availability calendar is not shown in the AD-04 drawer.
+- **`suspend`/`unsuspend` state guards** are a small additive DB change (the
+  api-spec's 409 contract wasn't implemented by the Phase 1 functions).
+- **`admin_dashboard_summary()` return signature changed** (DROP + recreate) —
+  no other code consumed it yet.
+- The opt-in live E2E specs share the `@seeable.test` user namespace and each
+  `afterAll` deletes all of it, so they must run `--workers=1` (or one file at a
+  time), not in parallel. Pre-existing; documented here.
+
+### Tests
+
+- `tests/unit/admin.test.ts` — +14 (`dashboardFromSummary`; `listingDisplayStatus`
+  + `listingSecondaryAnnotation` — INVENTORY-003; `reviewFlags` — INVENTORY-002 +
+  the one defensive check; `describeAction` — AD-05 sentences; `tallyListingCounts`).
+  **200 unit total.**
+- **`scripts/verify-admin.mjs`** (`npm run verify:admin`) — **29/29** live:
+  ADMIN-001 (not in `public_hoarding_listings` until `approve_listing`),
+  ADMIN-002 (suspend never touches a Confirmed request; still blocks submit;
+  the Confirmed request still completes), ADMIN-003 (blank-reason reject
+  refused), ADMIN-004 (suspend ≠ delist; delist independent + reversible),
+  two-Admin `FOR UPDATE` race → exactly one wins, one `admin_actions` row per
+  action, the suspend/unsuspend state guards, `requests` returns zero rows to an
+  Admin, non-Admins → `ADMIN_ONLY`, the dashboard aggregate.
+- **`tests/e2e/admin-flow.spec.ts`** (opt-in, `SEEABLE_E2E_LIVE=1`) — Admin signs
+  in → AD-04 approve (listing leaves the queue, enters `public_hoarding_detail`)
+  → AD-03 verify a pending Publisher. Passing.
+- `verify:publisher` 16/16, `verify:requests` 25/25, `verify:inventory` 23/23,
+  `verify:authz` 26/26, `verify:discovery` 15/15 still green. lint / typecheck /
+  `next build` / `cf:build` (maplibre-gl absent from the server bundle) /
+  15 non-live e2e green.
+
 ## Phase 8 — Publisher Platform
 
 Gives a Publisher a coherent home: a dashboard, a verification submission flow,

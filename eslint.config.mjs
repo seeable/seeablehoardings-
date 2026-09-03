@@ -43,6 +43,7 @@ const config = [
     files: [
       "app/api/v1/hoardings/**/media/**",
       "app/api/v1/publishers/me/verification/**",
+      "app/api/v1/admin/publishers/**/verification-document/**",
       "lib/supabase/admin.ts",
       "scripts/**",
     ],

@@ -30,7 +30,8 @@
     "verify:inventory": "node scripts/verify-inventory.mjs",
     "verify:discovery": "node scripts/verify-discovery.mjs",
     "verify:requests": "node scripts/verify-requests.mjs",
-    "verify:publisher": "node scripts/verify-publisher.mjs"
+    "verify:publisher": "node scripts/verify-publisher.mjs",
+    "verify:admin": "node scripts/verify-admin.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
