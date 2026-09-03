@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { PhasePlaceholder } from "@/components/phase-placeholder";
+import { Suspense } from "react";
+import { HoardingTable } from "@/components/inventory/hoarding-table";
 
 export const metadata: Metadata = { title: "My hoardings" };
+export const dynamic = "force-dynamic";
 
 export default function MyHoardingsPage() {
   return (
-    <PhasePlaceholder
-      title="My hoardings"
-      screen="My hoardings (PB-02) and the Add Hoarding wizard (PB-03)"
-      phase={5}
-    />
+    <Suspense fallback={null}>
+      <HoardingTable />
+    </Suspense>
   );
 }

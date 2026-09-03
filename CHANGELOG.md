@@ -1,5 +1,89 @@
 # Changelog
 
+## Phase 5 — Inventory Module
+
+A Publisher creates, prices, photographs (watermarked), locates, and submits a
+hoarding listing; the three submission gates are enforced with field-level
+errors; a minimal Admin path approves/rejects so a listing reaches `APPROVED`
+and appears in the Viewer projection.
+
+- **DB — `20260905120000_storage_buckets`**: `hoarding-public` (public bucket,
+  watermarked derivatives — the media `url` resolves here directly) and
+  `hoarding-private` (no policy at all — unreachable by anon/authenticated;
+  empty at MVP since Variant B keeps no original). Writes go through the
+  service-role media handler, never the browser.
+- **DB — `20260905120100_inventory_hardening`**: Phase 1 granted table-level
+  INSERT/UPDATE on `hoardings` — wide enough for a Publisher to
+  `PATCH approval_status='APPROVED'` and bypass ADMIN-001, or forge a
+  `WATERMARKED` `hoarding_media` row past CONTENT-001. Narrowed both to the
+  exact client-writable column sets (api-spec §12.3 / §13.2); revoked client
+  INSERT on `hoarding_media`. Added the `site_intelligence_complete` trigger
+  (server-derived, INVENTORY-002). **Verified live**: `PATCH approval_status`
+  and `INSERT hoarding_media` both refused for a Publisher JWT.
+- **Backend — 15 thin facades + 1 real handler + 3 Admin routes**
+  (`lib/inventory/`): `hoarding-types`; `hoardings` POST; `hoardings/{id}`
+  GET/PATCH/DELETE; `.../submit`; `.../media` GET + **real POST** (Variant B —
+  multipart in, magic-byte MIME sniff + size + dimension re-check on the bytes,
+  service-role write to `hoarding-public`, storage-then-row); `.../media/{id}`
+  PATCH/DELETE; `.../availability` GET; `.../availability/blocks` POST + DELETE;
+  `publishers/me/hoardings`; `admin/hoardings` GET + `.../approve` + `.../reject`.
+  `buildOwnerView()` computes `submission_readiness.blockers` (mirrors gates
+  4–9 of `submit_hoarding_for_review()`), `pending_request_count`,
+  `is_edit_frozen` — all from reads the owner can already make under RLS, no
+  new DB function.
+- **Frontend** — PB-02 (`/publisher/hoardings`, status tabs + counts + row
+  actions, Realtime-refreshed pending counts), PB-03/04 wizard
+  (`/publisher/hoardings/new` + `/[id]/edit`, 6 steps, autosave on step
+  transition, `submission_readiness` drives Step 6), PB-05
+  (`/[id]/calendar` — shared `AvailabilityEditor`, block/unblock, bookings
+  side-list), AD-04 minimal (`/admin/inventory` — queue + review drawer +
+  approve / reject-with-reason).
+- **Watermarking — Decision D1 Variant B** (`lib/inventory/watermark.ts`):
+  browser Canvas tiles a low-opacity diagonal "SEEABLE" mark, resizes to
+  ≤ 2000 px, re-encodes JPEG. The server re-validates the bytes before
+  publishing — a demo-grade control, **not a trust boundary**. Restore
+  Variant A (server-side worker) before real Publisher inventory (api-spec
+  §14.2, `mvp-brd.md` §10). The compensating control now is Admin approval.
+- **Map** — `MapPinPicker` (draggable MapLibre marker + manual lat/lng, the
+  a11y fallback and the only path with no map style). Loaded via
+  `next/dynamic({ ssr: false })` so `maplibre-gl` never enters a server
+  bundle (verified — RISK-1).
+
+### Deviations / calls
+
+- **Digital types are not draft-able.** api-spec §12.3 returns
+  `HOARDING_TYPE_NOT_LISTABLE` for `is_digital` at creation; the plan's DoD
+  ("digital = draft-only") and docs/04 disagree. The settled API wins — 6
+  static types selectable, 2 digital shown disabled.
+- **Min photos to submit = 1** (api-spec §14.4, matches the DB gate). The
+  wizard nudges toward 3 (docs/04) but that isn't a hard block.
+- **`GET /api/v1/hoardings` (Viewer list), `search_available_hoardings`
+  SECURITY DEFINER fix, `GET /media/{id}/original`** — deferred to Phase 6
+  (not on the Phase 5 critical path).
+- **No storage cleanup on hoarding DELETE** — orphaned watermarked objects in
+  a public bucket are harmless (api-spec §28.6); a cleanup job is future work.
+
+### Tests
+
+- `tests/unit/media.test.ts`, `inventory-attributes.test.ts`,
+  `inventory-projection.test.ts` — +30 unit tests (magic-byte sniff can't be
+  spoofed, JPEG/PNG/WebP dimension parsing, attribute humanising, every
+  submission blocker + edit-freeze derivation against a mock client).
+- **`scripts/verify-inventory.mjs`** (`npm run verify:inventory`) — **23/23**
+  live: create→DRAFT; `PATCH approval_status` refused; client `hoarding_media`
+  INSERT refused; every gate (`PUBLISHER_NOT_VERIFIED` →
+  `HOARDING_MISSING_CORE_FIELDS` → `HOARDING_INCOMPLETE_ATTRIBUTES` +
+  `missing_attribute_keys` → `HOARDING_MISSING_MEDIA` →
+  `HOARDING_MEDIA_NOT_WATERMARKED` → PENDING_REVIEW); INVENTORY-003 hides a
+  PENDING_REVIEW listing from a Viewer; admin approve → APPROVED → visible with
+  no PII, no `original_storage_path`; OWNER-003 freezes a core edit but not a
+  non-core one; delete with history → `HOARDING_HAS_REQUEST_HISTORY`;
+  confirmed + Publisher-blocked dates both read unavailable, free dates
+  available. Storage: service-role upload + public GET + delete on
+  `hoarding-public` confirmed.
+- Phase 3 `verify:authz` still 26/26. lint / typecheck / `next build` /
+  149 unit / 15 e2e green.
+
 ## Phase 4 — Application Foundation
 
 The shared UI system every later screen assembles from: design tokens, the

@@ -26,7 +26,8 @@
     "db:backup": "node scripts/db-backup.mjs",
     "check:bundle": "node scripts/assert-no-secrets-in-bundle.mjs",
     "provision:admin": "node scripts/provision-admin.mjs",
-    "verify:authz": "node scripts/verify-authz.mjs"
+    "verify:authz": "node scripts/verify-authz.mjs",
+    "verify:inventory": "node scripts/verify-inventory.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

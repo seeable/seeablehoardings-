@@ -25,7 +25,7 @@ export function formatINR(amount: number | null | undefined): string {
 /** "₹85,000/month" from a price + DAY|WEEK|MONTH unit. */
 export function formatPrice(
   amount: number | null | undefined,
-  unit: "DAY" | "WEEK" | "MONTH" | null | undefined,
+  unit: string | null | undefined,
 ): string {
   const price = formatINR(amount);
   if (price === "—" || !unit) return price;

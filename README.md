@@ -4,7 +4,7 @@ A two-sided marketplace connecting hoarding **Publishers** (inventory owners) wi
 
 - **Product spec:** [`docs/`](docs/) — PRD/BRD, module specs, architecture, database design, API spec, UI/UX (9 files).
 - **Build roadmap:** [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md) — 14 phases, every decision resolved.
-- **Status:** Phase 4 (application foundation) complete — design tokens + component library (`components/ui/`), Modal/Drawer/Toast, the shared Availability Calendar, three role nav shells (`AppShell`), the live SH-02 notification panel, and the client/Realtime data layer (`hooks/use-notifications`, `hooks/use-request-realtime`). Phase 5 (inventory) next.
+- **Status:** Phase 5 (inventory) complete — the Publisher listing flow (PB-02 list, PB-03/04 wizard, PB-05 calendar), browser-side watermarking (Variant B), the media pipeline (`/api/v1/hoardings/{id}/media`, service-role write to `hoarding-public`), the three submission gates, and a minimal Admin approve/reject (AD-04). `npm run verify:inventory` — 23/23 live. Phase 6 (Viewer discovery) next.
 
 ## Stack
 
@@ -71,6 +71,7 @@ Until you create a Supabase project, `.env.local` ships with placeholder values 
 | `npm run cf:build` / `cf:preview` / `cf:deploy` | OpenNext → Cloudflare                                                   |
 | `npm run db:types`                              | Regenerate `lib/supabase/database.types.ts` from the local DB           |
 | `npm run verify:authz [-- --api]`               | RLS / permission-matrix harness against the live project                |
+| `npm run verify:inventory`                      | Inventory gates / visibility / edit-freeze harness against the live project |
 | `npm run check:bundle`                          | Assert no service-role material in the client bundle (post-build)       |
 | `npm run provision:admin -- <email>`            | Promote an already-registered account to `ADMIN` (see `docs/runbooks/`) |
 
@@ -90,8 +91,9 @@ lib/
   supabase/             server + browser + admin (service-role) clients
   api/                  envelope, error taxonomy
   date.ts / format.ts   calendar-grid + ₹/date display helpers
+  inventory/            listing schema, owner projection, watermark, media validation
   env.ts / env.server.ts  zod-validated environment
-modules/                per-domain logic (auth, inventory, requests, ...)
+components/inventory/   the Add Hoarding wizard, media uploader, map pin picker, PB-02 table
 supabase/               config.toml, migrations/, seed.sql
 tests/                  unit/ integration/ e2e/
 docs/                   product & technical specification
