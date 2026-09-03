@@ -31,6 +31,9 @@
   --color-danger-50: #fbeae9;
   --color-info-700: #1d5b8f;
   --color-info-50: #e9f2fa;
+  /* Neutral status tint (Draft, Paused, Completed, Expired) — docs 02 §9.1 */
+  --color-neutral-700: #57534c;
+  --color-neutral-50: #f2f0eb;
 
   /* Typography */
   --font-sans:
@@ -108,5 +111,112 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
+  }
+}
+
+/*
+  Type scale (docs 02 §9.2). Use these instead of ad-hoc text-* classes so every
+  heading/label matches the spec's size + line-height + family + weight.
+*/
+@layer components {
+  .text-display {
+    font-family: var(--font-display);
+    font-size: 48px;
+    line-height: 52px;
+    font-weight: 400;
+  }
+  .text-h1 {
+    font-family: var(--font-heading);
+    font-size: 28px;
+    line-height: 36px;
+    font-weight: 600;
+  }
+  .text-h2 {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    line-height: 30px;
+    font-weight: 600;
+  }
+  .text-h3 {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    line-height: 26px;
+    font-weight: 600;
+  }
+  .text-h4 {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 600;
+  }
+  .text-body-l {
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .text-body-m {
+    font-size: 14px;
+    line-height: 20px;
+  }
+  .text-body-s {
+    font-size: 13px;
+    line-height: 18px;
+  }
+  .text-label {
+    font-size: 13px;
+    line-height: 16px;
+    font-weight: 500;
+  }
+  .text-caption {
+    font-size: 12px;
+    line-height: 16px;
+  }
+  .text-overline {
+    font-size: 11px;
+    line-height: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* Availability Calendar — "requested / pending-hold" cell texture (docs 02 §10.6).
+     Diagonal hatch so the state reads without relying on color alone (§24.1). */
+  .bg-hatch {
+    background-image: repeating-linear-gradient(
+      45deg,
+      var(--color-warning-700) 0,
+      var(--color-warning-700) 1px,
+      transparent 1px,
+      transparent 6px
+    );
+  }
+}
+
+/* Overlay entrance motion (docs 07 §24.5 — functional only). The global
+   prefers-reduced-motion rule collapses these to an instant state change. */
+@keyframes seeable-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes seeable-slide-up {
+  from {
+    transform: translateY(1rem);
+    opacity: 0;
+  }
+}
+@keyframes seeable-slide-left {
+  from {
+    transform: translateX(100%);
+  }
+}
+@layer components {
+  .animate-fade-in {
+    animation: seeable-fade-in var(--duration-fast) var(--ease-standard);
+  }
+  .animate-slide-up {
+    animation: seeable-slide-up var(--duration-base) var(--ease-standard);
+  }
+  .animate-slide-left {
+    animation: seeable-slide-left var(--duration-base) var(--ease-standard);
   }
 }

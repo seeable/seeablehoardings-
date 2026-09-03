@@ -54,8 +54,15 @@ test.describe(() => {
     await page.getByRole("button", { name: "Create account" }).click();
     await expect(page).toHaveURL(/\/discover/, { timeout: 15_000 });
 
-    // sign out
-    await page.getByRole("button", { name: "Sign out" }).click();
+    // the authenticated shell is up: primary nav + the notification bell
+    await expect(
+      page.getByRole("navigation", { name: "Primary" }).first(),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /Notifications/ })).toBeVisible();
+
+    // sign out — via the account menu in the top bar
+    await page.getByRole("button", { name: /E2E Viewer/i }).click();
+    await page.getByRole("menuitem", { name: "Sign out" }).click();
     await expect(page).toHaveURL(/\/$/);
 
     // wrong password

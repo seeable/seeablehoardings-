@@ -16,7 +16,7 @@ export default async function PublisherVerifyPage() {
 
   return (
     <section>
-      <h1 className="font-heading text-ink-900 text-2xl">Verification</h1>
+      <h1 className="text-h1 text-ink-900">Verification</h1>
       <p className="text-ink-700 mt-2">Status: {status}</p>
       <p className="text-ink-500 mt-1">{copy[status]}</p>
       <p className="text-ink-500 mt-4 text-sm">

@@ -1,5 +1,81 @@
 # Changelog
 
+## Phase 4 — Application Foundation
+
+The shared UI system every later screen assembles from: design tokens, the
+component library, overlays, the Availability Calendar, three role nav shells,
+the live SH-02 notification panel, and the client/Realtime data layer.
+
+- **Tokens** (`app/globals.css`) — `neutral-*` status tints added; the full
+  docs/02 §9.2 type scale as utility classes (`.text-h1` … `.text-overline`);
+  the calendar hatch texture and the three overlay-entrance keyframes (all
+  collapsed by the existing `prefers-reduced-motion` rule).
+- **Primitives** (`components/ui/`) — `button` reworked to the §10.1 spec (5
+  variants incl. a never-filled-red `destructive`, 3 sizes, spinner keeps
+  width); new `textarea`, `select`, `search-input`, `phone-input` (fixed +91),
+  `badge` (`StatusBadge` maps the real DB enums — `PENDING_REVIEW` →
+  "Pending approval" vs `REQUESTED` → "Pending", §25 — plus `VerifiedBadge`),
+  `skeleton`, `empty-state` (neutral / positive / filtered tone), `tabs`
+  (underline + counts, arrow-key roving), `table` (sticky header, sortable
+  `TH`, 44px rows), `card` gains `MetricCard`.
+- **Overlays** — `modal` (+ `ConfirmDialog`), `drawer`. `hooks/use-focus-trap`
+  traps Tab, closes on Esc, restores focus to the trigger; `hooks/use-mounted`
+  (`useSyncExternalStore`) is the SSR portal guard; body scroll locked while open.
+- **Availability Calendar** (`components/ui/availability-calendar.tsx` +
+  `lib/date.ts`) — the shared month grid (PB-05, VW-03/04). Cell states
+  available / held (hatch) / booked / past; range selection that re-anchors
+  rather than committing across a blocked day; arrow-key navigation; a legend.
+  `lib/date.ts` works on `"YYYY-MM-DD"` strings (no tz drift); "today" is IST.
+- **Formatting** (`lib/format.ts`) — ₹ Indian grouping, `15 Sep 2026` (month
+  normalised to 3 letters so a runtime that renders "Sept" still matches §25),
+  date ranges, and supplementary-only relative / countdown strings.
+- **Client + Realtime data layer** — `hooks/use-notifications` (facade fetch +
+  Realtime INSERT merge, RLS-scoped; optimistic `markRead`/`markAllRead`),
+  `hooks/use-request-realtime` (Realtime `requests` → `router.refresh()` +
+  callback). `lib/notifications.ts` maps `type` + related ids to a role-aware
+  deep link and an icon.
+- **Nav shells** (`components/nav/`) — `AppShell` composes: a 240px left rail
+  (`lg+`, all roles, gold active bar), a sticky top bar (bell + account menu;
+  a drawer menu for Publisher `< lg`), and a Viewer bottom tab bar (`< lg`,
+  three items — no Shortlist, D9). The three role-group layouts and a new
+  role-aware `/account` layout render it; `components/auth/role-bar.tsx` deleted.
+- **SH-02** — `NotificationBell` (Viewer + Publisher only; Admin has no panel,
+  docs/05) + `NotificationsDrawer`: reverse-chronological, `surface-2` tint +
+  `gold-500` dot on unread, tap → mark read + deep link, "Mark all as read",
+  `aria-label` always states the count. Live via `useNotifications()`.
+- **Toasts** (`components/ui/toast.tsx`, mounted in the root layout) — queue
+  with max 1 visible, ~4s auto-dismiss, `aria-live`; `useToast()` →
+  `success` / `error` / `info`.
+- **Nav-target stubs** — `components/phase-placeholder.tsx` + thin pages for
+  `/requests`, `/account`, `/publisher/hoardings`, `/publisher/requests`,
+  `/admin/inventory`, `/admin/activity` (+ Discover / Overview now placeholders)
+  so the wired-up shells have no dead links until those phases land.
+
+### Deviation from the plan
+
+- **No TanStack Query.** Server Components already do the bulk of fetching; the
+  interactive surface is narrow (the bell, live request refresh, one-shot form
+  mutations). The two hand-rolled Realtime hooks + the existing `api` client
+  cover it in less total code and add no dependency (the Worker bundle budget,
+  RISK-1, stays the reason to be frugal). If a screen later needs cache
+  fan-out / dedupe, revisit then.
+
+### Tests
+
+- `tests/unit/` +7 files, **126 unit tests** total: `format` (Indian grouping,
+  IST day math, relative/countdown), `date` (grid is 42 cells Monday-first,
+  month/year wrap, leap year), `badge` (every enum → label + tone, §25
+  collision, unknown → neutral), `availability-calendar` (past/booked/held not
+  selectable, range re-anchor across a booked day, keyboard focus), `overlays`
+  (Modal aria, Esc, backdrop vs content, focus in + restore; ConfirmDialog;
+  Drawer), `toast` (max 1 visible, queue drains after 4s, error = `role=alert`),
+  `notifications` (role-aware href, icon fallback), `use-notifications`
+  (initial load + unread count, live INSERT prepend + dedupe, optimistic
+  markRead).
+- `tests/e2e/live-auth-flow.spec.ts` updated for the new shell (asserts the
+  primary nav + bell render, signs out via the account menu).
+- lint / typecheck / `next build` / 15 e2e green.
+
 ## Phase 3 — Access Control & Tenant Isolation
 
 RLS is proven to be the enforcement layer, and the thin `/api/v1` facade

@@ -1,5 +1,5 @@
 import { requireRole } from "@/lib/auth/guard";
-import { RoleBar } from "@/components/auth/role-bar";
+import { AppShell } from "@/components/nav/app-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -10,9 +10,8 @@ export default async function ViewerLayout({
 }) {
   const user = await requireRole("VIEWER");
   return (
-    <div className="bg-surface-0 min-h-dvh">
-      <RoleBar user={user} />
-      <div className="mx-auto max-w-5xl px-4 py-8">{children}</div>
-    </div>
+    <AppShell role="VIEWER" name={user.full_name} email={user.email}>
+      {children}
+    </AppShell>
   );
 }

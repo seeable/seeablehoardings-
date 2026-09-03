@@ -10,7 +10,7 @@ export default async function PublisherDashboard() {
 
   return (
     <section>
-      <h1 className="font-heading text-ink-900 text-2xl">Dashboard</h1>
+      <h1 className="text-h1 text-ink-900">Dashboard</h1>
 
       {v && v.publisher_verification_status !== "VERIFIED" && (
         <Alert tone="info" className="mt-4">

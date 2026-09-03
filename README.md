@@ -4,7 +4,7 @@ A two-sided marketplace connecting hoarding **Publishers** (inventory owners) wi
 
 - **Product spec:** [`docs/`](docs/) — PRD/BRD, module specs, architecture, database design, API spec, UI/UX (9 files).
 - **Build roadmap:** [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md) — 14 phases, every decision resolved.
-- **Status:** Phase 3 (access control) complete — `/api/v1` facade toolkit (`defineRoute`), full error taxonomy, PII-safe logging, RLS/isolation proven end-to-end (`npm run verify:authz`). Phase 4 (design system) or Phase 5 (inventory) next.
+- **Status:** Phase 4 (application foundation) complete — design tokens + component library (`components/ui/`), Modal/Drawer/Toast, the shared Availability Calendar, three role nav shells (`AppShell`), the live SH-02 notification panel, and the client/Realtime data layer (`hooks/use-notifications`, `hooks/use-request-realtime`). Phase 5 (inventory) next.
 
 ## Stack
 
@@ -81,10 +81,15 @@ app/                    Next.js App Router
   (auth) (viewer) (publisher) (admin)   role-scoped route groups
   api/health/           uptime probe (bare JSON, no envelope)
   api/v1/               the thin REST facade
-components/ui/          shadcn/ui primitives (design system: docs/02)
+components/
+  ui/                   design-system primitives + Calendar + overlays (docs/02)
+  nav/                  the three role nav shells — AppShell, rail, tabs, bell
+  notifications/        SH-02 panel
+hooks/                  client hooks — use-notifications, use-request-realtime, use-focus-trap
 lib/
   supabase/             server + browser + admin (service-role) clients
   api/                  envelope, error taxonomy
+  date.ts / format.ts   calendar-grid + ₹/date display helpers
   env.ts / env.server.ts  zod-validated environment
 modules/                per-domain logic (auth, inventory, requests, ...)
 supabase/               config.toml, migrations/, seed.sql
