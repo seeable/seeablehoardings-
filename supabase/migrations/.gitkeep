@@ -1,0 +1,2 @@
+# Migrations land here in Phase 1 (IMPLEMENTATION-PLAN.md §Phase 1 / §40).
+# Create with:  npx supabase migration new <name>

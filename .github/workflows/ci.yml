@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Placeholder build-time env so `next build` succeeds without real secrets.
+  # Real values are injected by the deploy workflow / Cloudflare.
+  NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+  NEXT_PUBLIC_ENV: development
+  SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm run test
+      - name: Build
+        run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: E2E tests
+        run: npm run test:e2e
+
+  # Bundle-size gate — the deployed Worker must stay under the Cloudflare
+  # Free-plan 3 MiB compressed ceiling (RISK-1). Informational until Phase 13.
+  cloudflare-build:
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: OpenNext Cloudflare build
+        run: npm run cf:build
+      - name: Report worker bundle size
+        run: |
+          if [ -f .open-next/worker.js ]; then
+            gzip -c .open-next/worker.js | wc -c | awk '{printf "worker.js gzipped: %.2f MiB (ceiling 3.00)\n", $1/1048576}'
+          fi

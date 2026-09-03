@@ -1,0 +1,4 @@
+-- SEEABLE Hoardings — local seed data.
+-- Populated in Phase 1 (hoarding_types — IMPLEMENTATION-PLAN.md §Phase 1 step 15)
+-- and Phase 12 (deterministic test dataset — ~60 listings, requests in every state).
+-- Runs automatically on `supabase db reset`.

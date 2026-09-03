@@ -1,0 +1,8 @@
+# Wrangler local dev / `npm run cf:preview` variables.
+# Copy to `.dev.vars` (gitignored). `next dev` uses `.env.local` instead;
+# this file is only for the Cloudflare Workers runtime preview.
+NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key
+NEXT_PUBLIC_APP_URL=http://localhost:8788
+NEXT_PUBLIC_ENV=development
+SUPABASE_SERVICE_ROLE_KEY=placeholder-service-role-key
