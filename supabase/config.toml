@@ -159,7 +159,11 @@ site_url = "http://localhost:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["http://localhost:3000", "https://localhost:3000"]
+additional_redirect_urls = [
+  "http://localhost:3000",
+  "http://localhost:3000/auth/callback",
+  "http://localhost:3000/reset-password",
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -222,6 +226,9 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
+# Decision D2 / api-specification.md §5.12 "AUTH_OTP_ENABLED = false" branch:
+# the demo build returns a session immediately on signup. The hosted project
+# has `mailer_autoconfirm = true` set to match. Re-enable both for production.
 enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
@@ -318,6 +325,17 @@ max_frequency = "5s"
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `x`, `slack`, `spotify`, `workos`, `zoom`.
+# Google OAuth — Decision: Google sign-in creates/authenticates a VIEWER only.
+# Publishers sign up with email + password (they need the explicit role + the
+# verification flow). Enabled on the hosted project via the dashboard; this
+# stanza is for local (`supabase start`) parity. Set the two env vars in
+# `.env.local` / `.dev.vars` if you run Supabase locally.
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+skip_nonce_check = true
+
 [auth.external.apple]
 enabled = false
 client_id = ""

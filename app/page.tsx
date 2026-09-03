@@ -1,44 +1,48 @@
 import Link from "next/link";
-import { SkeletonProbe } from "@/components/skeleton-probe";
+import { getSessionUser, homePathForRole } from "@/lib/auth/session";
+
+export const dynamic = "force-dynamic";
+
+const btnPrimary =
+  "inline-flex h-11 items-center justify-center rounded-md bg-ink-900 px-6 text-sm font-medium text-surface-1 hover:bg-ink-800";
+const btnSecondary =
+  "inline-flex h-11 items-center justify-center rounded-md border border-border bg-surface-1 px-6 text-sm font-medium text-ink-900 hover:bg-surface-2";
 
 /**
- * Phase 0 walking skeleton. Confirms the app builds and deploys with the four
- * heavy client dependencies imported (IMPLEMENTATION-PLAN.md §Phase 0 / RISK-1):
- * @supabase/supabase-js, maplibre-gl, react-hook-form, zod.
- * Replaced by AUTH-01 (marketing landing) in Phase 2.
+ * AUTH-01 — Landing / marketing entry (docs/05 §AUTH-01).
+ * Light system end-to-end, Anton hero, one CTA pair.
  */
-export default function Home() {
+export default async function Landing() {
+  const user = await getSessionUser();
+
   return (
-    <main className="mx-auto flex min-h-dvh max-w-2xl flex-col justify-center gap-6 px-6 py-16">
-      <div>
-        <p className="text-gold-700 text-[11px] font-semibold tracking-[0.04em] uppercase">
-          Phase 0 · Project Foundation
-        </p>
-        <h1 className="font-display text-ink-900 mt-2 text-4xl">
-          SEEABLE Hoardings
-        </h1>
-        <p className="text-ink-700 mt-3 max-w-md">
-          Bengaluru&rsquo;s outdoor advertising, in one place. This is the
-          walking skeleton — the app builds, deploys, and loads the client
-          dependency set.
-        </p>
-      </div>
+    <main className="mx-auto flex min-h-dvh max-w-3xl flex-col items-center justify-center px-6 text-center">
+      <p className="font-display text-gold-700 text-sm tracking-[0.2em]">
+        SEEABLE
+      </p>
+      <h1 className="font-display text-ink-900 mt-4 text-4xl leading-tight sm:text-5xl">
+        Bengaluru&apos;s outdoor advertising, in one place.
+      </h1>
+      <p className="text-ink-700 mt-4 max-w-xl">
+        Discover, compare, and request hoardings, unipoles, and street furniture
+        from verified Publishers across the city.
+      </p>
 
-      <SkeletonProbe />
-
-      <div className="flex flex-wrap gap-3 text-sm">
-        <Link
-          href="/api/health"
-          className="border-border bg-surface-1 text-ink-900 hover:bg-surface-2 rounded-md border px-3 py-2"
-        >
-          /api/health
-        </Link>
-        <a
-          href="https://github.com"
-          className="border-border bg-surface-1 text-ink-900 hover:bg-surface-2 rounded-md border px-3 py-2"
-        >
-          Repository
-        </a>
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        {user ? (
+          <Link href={homePathForRole(user.role)} className={btnPrimary}>
+            Go to your dashboard
+          </Link>
+        ) : (
+          <>
+            <Link href="/login" className={btnSecondary}>
+              Log in
+            </Link>
+            <Link href="/signup" className={btnPrimary}>
+              Sign up
+            </Link>
+          </>
+        )}
       </div>
     </main>
   );

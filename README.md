@@ -4,7 +4,7 @@ A two-sided marketplace connecting hoarding **Publishers** (inventory owners) wi
 
 - **Product spec:** [`docs/`](docs/) — PRD/BRD, module specs, architecture, database design, API spec, UI/UX (9 files).
 - **Build roadmap:** [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md) — 14 phases, every decision resolved.
-- **Status:** Phase 1 (database) complete — full schema applied to the live Supabase project; Phase 2 (auth) next.
+- **Status:** Phase 2 (authentication) complete — Supabase Auth + Google (Viewer) sign-in, `/api/v1/auth/me`, route guards, AUTH-01→04 screens. Phase 4 (design system) or Phase 5 (inventory) next.
 
 ## Stack
 

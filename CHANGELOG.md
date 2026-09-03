@@ -1,5 +1,59 @@
 # Changelog
 
+## Phase 2 — Authentication (Supabase Auth, direct)
+
+Users register and sign in entirely through Supabase Auth from the client
+(api-specification.md §5.2 — no custom password system). One thin endpoint
+exposes role + gates; everything else is `supabase.auth.*` directly.
+
+- **`GET /api/v1/auth/me`** — the single source of identity + role + computed
+  gates (`can_submit_listings`, `can_create_requests`, …), `Cache-Control: no-store`.
+  `lib/auth/session.ts#getSessionUser()` (React `cache()`-deduped) backs it and
+  every server component; `lib/auth/gates.ts#computeGates()` is pure + unit-tested.
+- **`proxy.ts`** (Next 16's renamed `middleware.ts`) — `@supabase/ssr` session
+  refresh on every request, CSRF `Origin`-vs-`Host` check on POST/PUT/PATCH/DELETE
+  (Decision D3), and coarse route guards (`/login` for signed-out on protected
+  paths; `/post-login` for signed-in on auth pages). `lib/auth/guard.ts#requireRole()`
+  does the per-role check in each shell layout — wrong role → silent redirect to
+  that role's own home, never a 403 page (docs/07 §22).
+- **`app/auth/callback`** — OAuth + email-link PKCE exchange → role home.
+  **`app/auth/signout`** — POST, clears the cookie. **`app/post-login`** — reads
+  the profile (which `proxy.ts` can't) and routes by role.
+- **Google OAuth = Viewer only** (your decision). `signInWithOAuth` can't set a
+  role at signup, so a Google account lands as `VIEWER` via `handle_new_user`'s
+  default. Publishers sign up with email + password + the role selector.
+  Migration `20260904090000` makes `handle_new_user` read Google's `name` claim
+  and `on conflict do nothing`.
+- **Screens** (functional, design-token styled — Phase 4 swaps in the full
+  `docs/02` system): AUTH-01 landing, AUTH-02 login (generic error, show/hide
+  password), AUTH-03 signup (2-step: role radiogroup → form, live strength
+  meter), AUTH-04 forgot + reset. Minimal `components/ui/` primitives
+  (Button/Input/Field/Card/PasswordInput). `AuthProvider` client context mirrors
+  `/me` off `onAuthStateChange` (powers Phase 4's bell). Stub role homes
+  (`/discover`, `/publisher/dashboard`, `/publisher/verify`, `/admin/overview`).
+- **MVP scope calls (documented in `lib/validation/auth.ts`):**
+  - Email + password only — no phone-as-credential (Decision D5, no SMS). The
+    sign-up "Mobile" field is an optional contact detail on the profile.
+  - Route groups: `(viewer)` is unprefixed (`/discover`); `(publisher)` and
+    `(admin)` carry a URL prefix (`/publisher/*`, `/admin/*`).
+- **Hosted Supabase project changes made** (revert both for production):
+  `mailer_autoconfirm = true` (demo: signup returns a session immediately,
+  api-spec §5.12 "OTP off" branch) and `uri_allow_list = http://localhost:3000/**`.
+- **Tests:** `tests/unit/auth.test.ts` (16 — zod schemas, `ADMIN` rejected
+  client-side, `computeGates` matrix, helpers). `tests/e2e/smoke.spec.ts`
+  rewritten (landing/login/signup render, protected-route redirect).
+  `tests/e2e/live-auth-flow.spec.ts` — full signup→discover / signout→home /
+  bad-password→error / login→discover, opt-in via `SEEABLE_E2E_LIVE=1`.
+  Verified live: 8/8 auth integration checks (handle_new_user rows, forged
+  `role:ADMIN` → `VIEWER`, OAuth name fallback, RLS self-read, `/me` 401) +
+  the live E2E round trip. lint/typecheck/build green; 34 unit + 5 e2e pass.
+
+### You still need to do
+
+- **Supabase dashboard → Authentication → URL Configuration → Redirect URLs:**
+  localhost is set; add your deployed `…/auth/callback` when you ship to
+  Cloudflare, and consider re-enabling email confirmation for production.
+
 ## Phase 1 — Database Schema, Constraints, Functions, pg_cron & Data Layer
 
 Full PostgreSQL schema per `database-design.md` §40–§42, applied to the live
