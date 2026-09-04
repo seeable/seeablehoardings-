@@ -6,7 +6,30 @@ import {
   formatDateRange,
   formatRelative,
   formatCountdown,
+  joinLocationParts,
 } from "@/lib/format";
+
+describe("joinLocationParts — billboard-import polish", () => {
+  it("drops null/empty parts", () => {
+    expect(joinLocationParts(["Kaggalipura", null, "Bengaluru"])).toBe(
+      "Kaggalipura, Bengaluru",
+    );
+  });
+
+  it("collapses an immediate repeat (locality === city)", () => {
+    expect(joinLocationParts(["Bengaluru", "Bengaluru"])).toBe("Bengaluru");
+  });
+
+  it("keeps a later repeat that isn't adjacent", () => {
+    expect(joinLocationParts(["Bengaluru", "Kaggalipura", "Bengaluru"])).toBe(
+      "Bengaluru, Kaggalipura, Bengaluru",
+    );
+  });
+
+  it("returns an empty string when every part is empty", () => {
+    expect(joinLocationParts([null, undefined, ""])).toBe("");
+  });
+});
 
 describe("formatINR — Indian digit grouping (docs/07 §25)", () => {
   it("groups lakhs correctly", () => {

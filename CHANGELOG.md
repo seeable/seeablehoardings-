@@ -1,5 +1,110 @@
 # Changelog
 
+## Billboard Inventory Import (out-of-sequence — ahead of Phase 11)
+
+A user-directed addition, not part of the phased roadmap: importing the 68
+real site-survey photos in `billboards/` (`SH-BB-001..063`, `SH-DB-001..003`,
+`SH-BS-001`, `SH-SP-001`) as genuine, publicly-visible inventory — "a primary
+MVP requirement," not seed/test data.
+
+- **Metadata — extracted, not invented.** The photos carry a real "GPS Map
+  Camera" app overlay burned into the pixels: locality, full address, exact
+  lat/long, timestamp. `scripts/extract-billboard-metadata.py` (one-time,
+  Python + `rapidocr-onnxruntime`, both dev-only) OCRs it into
+  `scripts/billboard-metadata.json`. Getting a clean read took three passes —
+  naive per-line regex → anchoring on the "GPS Map Camera" label (broke when
+  background signage shared its Y-range) → the fix: every genuine overlay
+  line sits at the same narrow X-position band (~0.31 or ~0.36 of image
+  width, empirically) in the bottom third of the frame, regardless of what
+  else is in the photo. 5 of 68 extractions were still wrong in a way regex
+  couldn't catch (a brand name or vehicle plate reading as the "locality") —
+  found by eye, corrected by hand, both values kept in the JSON for audit.
+  Result: 49 codes with clean Karnataka geodata, 17 photos with no overlay at
+  all (genuine — confirmed visually, not a parsing failure) so they carry no
+  location, and 2 (`SH-BB-061/063`) with real coordinates that turn out to be
+  in Tamil Nadu (Hosur), outside the platform's stated single-city scope.
+  `SH-SP-001` matches no `hoarding_types` code — excluded, flagged for manual
+  classification, exactly as instructed rather than guessed.
+- **DB — `20260911120000_inventory_code_uniqueness`**: a partial unique index
+  on `attributes->>'inventory_code'` — the durable, DB-enforced idempotency
+  key `hoardings` never had a business-key column for.
+- **DB — `20260911120100_service_role_grants` (a real pre-existing bug,
+  found here, not introduced here):** `service_role` held only
+  `TRUNCATE/TRIGGER/REFERENCES` on every public table — never
+  `SELECT/INSERT/UPDATE/DELETE`. RLS bypass and Postgres GRANTs are
+  orthogonal; this meant `lib/supabase/admin.ts`'s `createAdminClient()`
+  could never actually read or write a table directly. Every existing use
+  happened to go through a `SECURITY DEFINER` RPC (runs as the function's
+  owner, immune to the caller's own grants) or Supabase Storage's own
+  permission model — so this had never been exercised end-to-end until this
+  import script became the first tooling to call `admin.from(...)` directly.
+  **The existing `POST /api/v1/hoardings/{id}/media` route was very likely
+  broken in production the same way.** Fixed by granting `service_role` the
+  privileges every Supabase project's service role is meant to have, plus
+  matching `ALTER DEFAULT PRIVILEGES` so future migrations inherit it. Confirmed
+  before/after via `information_schema.role_table_grants`. Applied only after
+  explicit confirmation (a live-database privilege change).
+- **Import — `scripts/import-billboards.mjs`** (idempotent, `npm run
+  import:billboards`, `--dry-run` / `--only=CODE,...` supported): validates
+  the folder (68/68 files, 0 unsupported/duplicate/missing), classifies by
+  prefix (`BB→UNIPOLE_BILLBOARD`, `DB→DIGITAL_BILLBOARD`,
+  `BS→BUS_QUEUE_SHELTER`), creates one house Publisher
+  (`inventory@seeable.internal`, business name "SEEABLE Inventory",
+  pre-verified — there is no real Publisher to own showcase inventory yet),
+  then per code: inserts `hoardings` (title = "`<Type>` — `<code>`",
+  `attributes.inventory_code` = the exact business code, `price`/`lat`/`lng`
+  left `NULL` unless the OCR'd overlay supplied them — **never a fabricated
+  location or price**), server-side watermarks the photo (`sharp` + a tiled
+  SVG "SEEABLE" overlay — Node has no `<canvas>`, so this reproduces
+  `lib/inventory/watermark.ts`'s client-side design rather than reusing its
+  code), uploads to `hoarding-public` at the same
+  `{hoarding_id}/{media_id}-watermarked.jpg` path the real upload route uses,
+  and inserts the `hoarding_media` row as `WATERMARKED`.
+  - **Publish decision, not a rubber stamp:** the normal path to `APPROVED`
+    (`submit_hoarding_for_review()`) hard-requires price + lat/lng — a gate
+    this import cannot honestly satisfy for every code. Sanctioned as
+    "migration / seed / provisioning tooling" per `admin.ts`'s own
+    doc-comment, so it writes `hoardings` directly via the service role
+    (same class of operation as the `hoarding_types` reference-data
+    migration) and flips `DRAFT → APPROVED` with a direct `UPDATE` — not by
+    calling `approve_listing()`, because that RPC's `admin_actions` audit
+    row exists to record a human moderation decision, and attributing one to
+    an Admin who never reviewed these would be dishonest. `approved_by`
+    stays `NULL`.
+  - **62 of 67 importable codes published** (63 `UNIPOLE_BILLBOARD` + 1
+    `BUS_QUEUE_SHELTER`, minus the 2 Tamil Nadu sites). **5 held back at
+    `DRAFT` by design** — 3 `DIGITAL_BILLBOARD` (taxonomy-only at MVP,
+    `mvp-brd.md` §5.1 — `search_available_hoardings()` already excludes
+    `is_digital` types regardless of approval status) and the 2 Tamil Nadu
+    sites (real coordinates, but outside the platform's single-city scope —
+    held for a product decision, not silently published or silently
+    dropped). Still fully visible/manageable in Admin's "All" inventory tab
+    either way.
+- **Frontend — `lib/format.ts#joinLocationParts`**: a general fix, not
+  billboard-specific — a location line built from
+  `[address_text, locality, city]` could repeat a segment back-to-back (a
+  central-Bengaluru site's OCR'd locality often reads as "Bengaluru" too,
+  same as `city`). Collapses immediate repeats only; a same-named place
+  further down the list still shows. `HoardingCard` + `DetailView`'s price
+  line now render **"Details coming soon"** (not a bare "—") when `price` is
+  `null` — the first real case of a searchable listing with no price, since
+  the self-serve gate normally forces one.
+- **Verify — `scripts/verify-billboards.mjs`** (`npm run verify:billboards`,
+  live, re-runnable): all 67 importable codes present exactly once, every
+  hoarding has a `WATERMARKED` media row, a sample of public image URLs
+  actually resolve (200, `image/*`), `search_available_hoardings()` returns
+  exactly the 62 published codes (no `DRAFT` leakage, exact `total_count`
+  match), an anon caller cannot `approve_listing()` directly. 8/8 live.
+  Verified the full path by hand too: started the dev server, signed in as a
+  real Viewer, screenshotted `/discover` (62 real watermarked photos,
+  "Details coming soon" pricing, inventory codes in the card titles) and a
+  detail page — not just checked via API.
+- **Tests:** `tests/unit/format.test.ts` +4 (`joinLocationParts`). 212 unit
+  tests, lint/typecheck/build/`check:bundle` green.
+- **Not done:** `SH-SP-001` (excluded, needs a human to classify it — no
+  existing `hoarding_types` code fits); the 2 Tamil Nadu sites are not
+  published pending a product decision on the platform's single-city scope.
+
 ## Phase 10 — Shared Systems: Analytics, Audit, Optional Email
 
 The remainder of the async backbone. Notification delivery (Realtime, Phase 4)

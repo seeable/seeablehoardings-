@@ -121,6 +121,21 @@ export function formatCountdown(
   return `in ${Math.round(hours / 24)} days`;
 }
 
+/** Joins non-empty parts with ", ", collapsing immediate repeats — e.g. a
+ *  locality that happens to equal the city ("Bengaluru", "Bengaluru") reads
+ *  as one mention, not two. */
+export function joinLocationParts(
+  parts: (string | null | undefined)[],
+): string {
+  const kept: string[] = [];
+  for (const p of parts) {
+    if (!p) continue;
+    if (kept[kept.length - 1] === p) continue;
+    kept.push(p);
+  }
+  return kept.join(", ");
+}
+
 function toDate(value: string | Date | null | undefined): Date | null {
   if (value == null) return null;
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;

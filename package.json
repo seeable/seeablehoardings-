@@ -32,7 +32,9 @@
     "verify:requests": "node scripts/verify-requests.mjs",
     "verify:publisher": "node scripts/verify-publisher.mjs",
     "verify:admin": "node scripts/verify-admin.mjs",
-    "verify:analytics": "node scripts/verify-analytics.mjs"
+    "verify:analytics": "node scripts/verify-analytics.mjs",
+    "verify:billboards": "node scripts/verify-billboards.mjs",
+    "import:billboards": "node scripts/import-billboards.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

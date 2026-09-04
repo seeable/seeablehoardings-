@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { MapPin, ImageOff } from "lucide-react";
 import { VerifiedBadge } from "@/components/ui/badge";
-import { formatPrice, formatDate } from "@/lib/format";
+import { formatPrice, formatDate, joinLocationParts } from "@/lib/format";
 import { todayIST } from "@/lib/date";
 import type { DiscoverCard } from "@/lib/discovery/types";
 import { cn } from "@/lib/utils";
@@ -60,7 +60,7 @@ export function HoardingCard({
         <p className="text-ink-700 flex items-center gap-1 text-[13px]">
           <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
           <span className="line-clamp-1">
-            {[h.location.locality, h.location.city].filter(Boolean).join(", ")}
+            {joinLocationParts([h.location.locality, h.location.city])}
           </span>
           {h.distance_km != null && (
             <span className="text-ink-500 shrink-0">
@@ -74,8 +74,13 @@ export function HoardingCard({
         </div>
         <div className="flex items-end justify-between gap-2 pt-0.5">
           <div>
-            <p className="text-ink-900 text-sm font-semibold">
-              {formatPrice(h.price, h.price_unit)}
+            <p
+              className={cn(
+                "text-sm font-semibold",
+                h.price == null ? "text-ink-500 italic" : "text-ink-900",
+              )}
+            >
+              {h.price == null ? "Details coming soon" : formatPrice(h.price, h.price_unit)}
             </p>
             <p className="text-ink-500 flex items-center gap-1 text-xs">
               {h.publisher.business_name ?? "SEEABLE Publisher"}

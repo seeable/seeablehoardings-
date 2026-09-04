@@ -13,7 +13,7 @@ import {
 import { PhotoCarousel } from "@/components/discovery/photo-carousel";
 import { SubmitRequestModal } from "@/components/requests/submit-request-modal";
 import { emitAnalyticsEvent } from "@/lib/analytics/client";
-import { formatPrice, formatDate, formatDateRange } from "@/lib/format";
+import { formatPrice, formatDate, formatDateRange, joinLocationParts } from "@/lib/format";
 import { isWithin, todayIST, type ISODate } from "@/lib/date";
 import { humanizeAttributeKey } from "@/lib/inventory/attributes";
 import type { PublicHoardingDetail } from "@/lib/discovery/types";
@@ -71,6 +71,7 @@ export function DetailView({ hoarding: h }: { hoarding: PublicHoardingDetail }) 
     start && end
       ? `Request ${formatDateRange(start, end)}`
       : "Request this hoarding";
+  const priceLabel = h.price == null ? "Details coming soon" : formatPrice(h.price, h.price_unit);
 
   return (
     <div className="mx-auto max-w-5xl pb-24 lg:pb-8">
@@ -89,9 +90,11 @@ export function DetailView({ hoarding: h }: { hoarding: PublicHoardingDetail }) 
             <h1 className="text-h1 text-ink-900">{h.title}</h1>
             <p className="text-ink-700 mt-1 flex items-center gap-1.5 text-sm">
               <MapPin className="h-4 w-4" aria-hidden />
-              {[h.location.address_text, h.location.locality, h.location.city]
-                .filter(Boolean)
-                .join(", ")}
+              {joinLocationParts([
+                h.location.address_text,
+                h.location.locality,
+                h.location.city,
+              ])}
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               <Chip>{h.type.display_name}</Chip>
@@ -166,8 +169,14 @@ export function DetailView({ hoarding: h }: { hoarding: PublicHoardingDetail }) 
         {/* Desktop sticky summary */}
         <aside className="hidden lg:block">
           <div className="border-border bg-surface-1 sticky top-20 space-y-3 rounded-lg border p-4 shadow-sm">
-            <p className="text-ink-900 text-xl font-semibold">
-              {formatPrice(h.price, h.price_unit)}
+            <p
+              className={
+                h.price == null
+                  ? "text-ink-500 text-xl font-semibold italic"
+                  : "text-ink-900 text-xl font-semibold"
+              }
+            >
+              {priceLabel}
             </p>
             <p className="text-ink-500 flex items-center gap-1.5 text-sm">
               {h.publisher.business_name ?? "SEEABLE Publisher"}
@@ -197,8 +206,14 @@ export function DetailView({ hoarding: h }: { hoarding: PublicHoardingDetail }) 
       {/* Mobile sticky CTA */}
       <div className="border-border bg-surface-1 fixed inset-x-0 bottom-14 z-20 flex items-center gap-3 border-t p-3 lg:hidden">
         <div className="min-w-0 flex-1">
-          <p className="text-ink-900 text-sm font-semibold">
-            {formatPrice(h.price, h.price_unit)}
+          <p
+            className={
+              h.price == null
+                ? "text-ink-500 text-sm font-semibold italic"
+                : "text-ink-900 text-sm font-semibold"
+            }
+          >
+            {priceLabel}
           </p>
         </div>
         {fullyBooked ? (
