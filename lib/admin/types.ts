@@ -49,6 +49,21 @@ export interface AdminDashboard {
   generated_at: string;
 }
 
+/** Phase 10 — mvp-brd.md §14's seven MVP-stage KPIs, admin-only. */
+export interface AdminKpis {
+  publishers_onboarded: number;
+  publishers_verified: number;
+  live_approved_listings: number;
+  viewer_accounts: number;
+  requests_submitted: number;
+  request_to_confirmation_rate_pct: number;
+  /** null when no request has been decided yet. */
+  median_publisher_response_hours: number | null;
+  repeat_viewers: number;
+  repeat_publishers: number;
+  generated_at: string;
+}
+
 export type ReviewFlagSeverity = "INFO" | "WARN";
 
 export interface ReviewFlag {

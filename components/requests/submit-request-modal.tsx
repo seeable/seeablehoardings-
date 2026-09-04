@@ -13,6 +13,7 @@ import {
   type DayState,
 } from "@/components/ui/availability-calendar";
 import { createRequest } from "@/lib/requests/client";
+import { emitAnalyticsEvent } from "@/lib/analytics/client";
 import { REQUEST_SLA_HOURS } from "@/lib/requests/types";
 import { ApiClientError } from "@/lib/api/client";
 import { formatDateRange, formatPrice } from "@/lib/format";
@@ -63,6 +64,10 @@ export function SubmitRequestModal({
     return { year: y, month: m };
   });
 
+  React.useEffect(() => {
+    if (open) void emitAnalyticsEvent("REQUEST_STARTED", { hoarding_id: hoarding.id });
+  }, [open, hoarding.id]);
+
   const dayState = React.useCallback(
     (d: ISODate): Exclude<DayState, "past"> => {
       for (const r of hoarding.booked_ranges)
@@ -101,6 +106,7 @@ export function SubmitRequestModal({
         message: message.trim() || undefined,
         idempotencyKey: idemKey.current,
       });
+      void emitAnalyticsEvent("REQUEST_SUBMITTED", { hoarding_id: hoarding.id });
       setPhase("success");
     } catch (e) {
       if (e instanceof ApiClientError) {

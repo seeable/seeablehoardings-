@@ -1248,6 +1248,20 @@ export type Database = {
           verified_publishers: number
         }[]
       }
+      admin_kpis: {
+        Args: never
+        Returns: {
+          live_approved_listings: number
+          median_publisher_response_hours: number
+          publishers_onboarded: number
+          publishers_verified: number
+          repeat_publishers: number
+          repeat_viewers: number
+          request_to_confirmation_rate: number
+          requests_submitted: number
+          viewer_accounts: number
+        }[]
+      }
       admin_listing_queue: {
         Args: never
         Returns: {

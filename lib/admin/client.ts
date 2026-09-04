@@ -10,6 +10,7 @@ import type { PaginationMeta } from "@/lib/api/pagination";
 import type {
   AdminActionRow,
   AdminDashboard,
+  AdminKpis,
   AdminListingRow,
   AdminPublisherRow,
 } from "@/lib/admin/types";
@@ -27,6 +28,10 @@ function qs(params: Record<string, string | string[] | undefined>): string {
 
 export function getAdminDashboard(): Promise<AdminDashboard> {
   return api.get<AdminDashboard>("/api/v1/admin/dashboard").then((r) => r.data);
+}
+
+export function getAdminKpis(): Promise<AdminKpis> {
+  return api.get<AdminKpis>("/api/v1/admin/kpis").then((r) => r.data);
 }
 
 export interface Page<T> {

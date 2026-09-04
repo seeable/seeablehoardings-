@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   dashboardFromSummary,
   describeAction,
+  kpisFromRow,
   listingDisplayStatus,
   listingSecondaryAnnotation,
   reviewFlags,
@@ -53,6 +54,52 @@ describe("dashboardFromSummary — api-spec §24.4 / AD-01", () => {
       "x",
     );
     expect(d.requests.confirmation_rate_pct).toBe(0);
+  });
+});
+
+describe("kpisFromRow — mvp-brd.md §14 (Phase 10)", () => {
+  const row = {
+    publishers_onboarded: 19,
+    publishers_verified: 14,
+    live_approved_listings: 52,
+    viewer_accounts: 140,
+    requests_submitted: 210,
+    request_to_confirmation_rate: 41.9,
+    median_publisher_response_hours: 6.5,
+    repeat_viewers: 22,
+    repeat_publishers: 5,
+  };
+
+  it("maps every KPI into the response shape", () => {
+    const k = kpisFromRow(row, "2026-09-04T10:00:00Z");
+    expect(k).toEqual({
+      publishers_onboarded: 19,
+      publishers_verified: 14,
+      live_approved_listings: 52,
+      viewer_accounts: 140,
+      requests_submitted: 210,
+      request_to_confirmation_rate_pct: 41.9,
+      median_publisher_response_hours: 6.5,
+      repeat_viewers: 22,
+      repeat_publishers: 5,
+      generated_at: "2026-09-04T10:00:00Z",
+    });
+  });
+
+  it("coerces a null confirmation rate to 0 (no requests yet)", () => {
+    const k = kpisFromRow(
+      { ...row, request_to_confirmation_rate: null as unknown as number },
+      "x",
+    );
+    expect(k.request_to_confirmation_rate_pct).toBe(0);
+  });
+
+  it("keeps a null median response time as null (no request decided yet)", () => {
+    const k = kpisFromRow(
+      { ...row, median_publisher_response_hours: null as unknown as number },
+      "x",
+    );
+    expect(k.median_publisher_response_hours).toBeNull();
   });
 });
 

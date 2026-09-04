@@ -4,7 +4,7 @@ A two-sided marketplace connecting hoarding **Publishers** (inventory owners) wi
 
 - **Product spec:** [`docs/`](docs/) — PRD/BRD, module specs, architecture, database design, API spec, UI/UX (9 files).
 - **Build roadmap:** [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md) — 14 phases, every decision resolved.
-- **Status:** Phase 9 (Admin platform) complete — AD-01 Overview (4 counts, deep-links), AD-02 Publishers & Inventory (segmented control, status tabs, verify/suspend/approve/reject/delist/relist), AD-03 Verification detail (document signed-URL), AD-04 Listing review, AD-05 Activity feed. Thin `/api/v1/admin/*` facade over the Phase-1 moderation functions; `admin_dashboard_summary()` extended with the AD-01 metrics; `suspend`/`unsuspend` gain a 409 state guard. `npm run verify:admin` — 29/29 live (ADMIN-001..004, two-Admin race, audit rows, no request browser). Phase 10 (shared systems) next.
+- **Status:** Phase 10 (Shared systems) complete — analytics events (`SEARCH`, `FILTER_USED`, `HOARDING_VIEWED`, `REQUEST_STARTED/SUBMITTED/ACCEPTED/REJECTED`, `PAGE_VIEW`) wired client-side into discovery/detail/request flows; `admin_kpis()` + `GET /api/v1/admin/kpis` for the 7 `mvp-brd.md` §14 KPIs; in-transaction notification writes re-verified. Email dispatch and storage cleanup are deferred (both optional per the plan; no Resend-in-Postgres wiring decided yet). `npm run verify:analytics` — 10/10 live. Phase 9 (Admin platform) complete before it — AD-01 Overview (4 counts, deep-links), AD-02 Publishers & Inventory (segmented control, status tabs, verify/suspend/approve/reject/delist/relist), AD-03 Verification detail (document signed-URL), AD-04 Listing review, AD-05 Activity feed. Phase 11 (security hardening) next.
 
 ## Stack
 
@@ -76,6 +76,7 @@ Until you create a Supabase project, `.env.local` ships with placeholder values 
 | `npm run verify:requests`                       | Request Engine lifecycle + concurrency (RISK-4) harness against the live project |
 | `npm run verify:publisher`                      | Publisher verification / OWNER-004 / suspended-UX / document isolation (live) |
 | `npm run verify:admin`                          | Admin moderation — ADMIN-001..004, two-Admin race, audit rows (live)    |
+| `npm run verify:analytics`                      | Analytics RLS shape + `admin_kpis()` vs. independent SQL + notification transactionality (live) |
 | `npm run check:bundle`                          | Assert no service-role material in the client bundle (post-build)       |
 | `npm run provision:admin -- <email>`            | Promote an already-registered account to `ADMIN` (see `docs/runbooks/`) |
 
@@ -99,13 +100,15 @@ lib/
   discovery/            Viewer-facing card / filter / detail shapes + client
   requests/             Request resource shapes, status labels, available_actions, client
   publisher/            profile / summary derivation / verification shapes + client
-  admin/                dashboard / queue / action-feed shapes, projections, client
+  admin/                dashboard / KPIs / queue / action-feed shapes, projections, client
+  analytics/            fire-and-forget analytics_events emitter (Phase 10)
   env.ts / env.server.ts  zod-validated environment
 components/inventory/   the Add Hoarding wizard, media uploader, map pin picker, PB-02 table
 components/discovery/   VW-01 filters + grid, VW-02 map, VW-03 detail + carousel
 components/requests/    VW-04 submit modal, VW-05 my-requests, PB-06 inbox, PB-07 drawer
 components/publisher/   PB-01 dashboard, PB-08 verification form + banner, SH-01 account
 components/admin/       AD-01..05 — overview, publishers & inventory, review drawers, activity
+components/analytics/   PageViewTracker — mounted once in the root layout
 supabase/               config.toml, migrations/, seed.sql
 tests/                  unit/ integration/ e2e/
 docs/                   product & technical specification

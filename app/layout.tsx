@@ -3,6 +3,7 @@ import { Inter, Inter_Tight, Anton } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { ToastProvider } from "@/components/ui/toast";
+import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -49,7 +50,10 @@ export default function RootLayout({
     >
       <body>
         <AuthProvider>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>
+            <PageViewTracker />
+            {children}
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

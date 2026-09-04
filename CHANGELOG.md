@@ -1,5 +1,80 @@
 # Changelog
 
+## Phase 10 — Shared Systems: Analytics, Audit, Optional Email
+
+The remainder of the async backbone. Notification delivery (Realtime, Phase 4)
+and the scheduling jobs (`pg_cron`, Phase 1) already existed; this phase is
+analytics events + the KPI query set + confirming the audit trail — plus a
+deliberate scope call on the two pieces the plan itself marks optional.
+
+- **Confirmed, not rebuilt** (`database-design.md` §44 / `mvp-brd.md` §14):
+  `notify_request_created()` inserts both `REQUEST_CREATED` rows in the single
+  `INSERT ... VALUES (...), (...)` of its own `AFTER INSERT` trigger — one
+  transaction with the request itself, no separate write to fail out-of-band.
+  `notify_expiring_soon_requests()` is idempotent via a `not exists` guard
+  against `notifications` before it inserts. Both re-verified live in
+  `verify-analytics.mjs` (ANALYTICS-005) rather than taken on faith.
+- **DB — `20260910120000_kpis`**: `admin_kpis()`, a second `SECURITY DEFINER`
+  admin-only aggregate alongside `admin_dashboard_summary()` (kept separate so
+  a change to one can't reshape the other) — the seven `mvp-brd.md` §14 KPIs:
+  publishers onboarded/verified and live approved listings reuse the same
+  counts as AD-01; new here are `viewer_accounts`, `request_to_confirmation_rate`,
+  `median_publisher_response_hours` (straight off `requests.confirmed_at` /
+  `.rejected_at` — both already set in the same transaction as the decision by
+  Phase 7's `confirm_request()` / `reject_request()`, so no join to
+  `request_status_history` needed), and `repeat_viewers` / `repeat_publishers`
+  (an actor with more than one request/listing of their own — usage read
+  literally, not yet defined against tenure). Caught live: `percentile_cont()`
+  returns `double precision`, and Postgres has no `round(double precision, int)`
+  overload — the first deploy failed at call time, not at migration time; fixed
+  with an explicit `::numeric` cast before rounding.
+- **Backend**: `GET /api/v1/admin/kpis` — same thin-facade, `no-store` pattern
+  as `/admin/dashboard`. `lib/admin/{types,projection,client}.ts` gain
+  `AdminKpis` / `kpisFromRow` / `getAdminKpis`.
+- **Frontend — `lib/analytics/client.ts`**: a fire-and-forget
+  `emitAnalyticsEvent()` (never throws, failure is swallowed — analytics is
+  best-effort, not a business path) wired into `SEARCH` + `FILTER_USED`
+  (discovery), `HOARDING_VIEWED` (detail), `REQUEST_STARTED` / `_SUBMITTED`
+  (submit modal), `REQUEST_ACCEPTED` / `_REJECTED` (publisher drawer), and
+  `PAGE_VIEW` via a new `<PageViewTracker>` mounted once in the root layout.
+  The discovery UI has no free-text search box — `SEARCH` fires on every
+  result-fetch, `FILTER_USED` on the user's own filter-bar interaction, so the
+  two events stay distinct without inventing UI that doesn't exist.
+- **Live bug found and fixed in verification, not in the shipped client**:
+  `analytics_events` is deliberately write-only for non-Admins (`insert: any`,
+  `select: is_admin()`). PostgREST's implicit `RETURNING` under
+  `Prefer: return=representation` re-checks the new row against the *SELECT*
+  policy, so a non-Admin insert with that header fails RLS on the return, not
+  the write. `lib/analytics/client.ts` never calls `.select()`, so supabase-js
+  sends no `Prefer` header (PostgREST's real default is `return=minimal`) and
+  is unaffected — this only broke `verify-analytics.mjs`'s own `rest()` helper,
+  which defaults every call to `return=representation` (correct for every
+  other table this script family touches, wrong for this one). Fixed by
+  requesting `return=minimal` for that one insert.
+- **Deferred, per explicit product decision** — email dispatch (`pg_net` →
+  Resend) and the weekly storage-cleanup job. Both are optional in the plan's
+  own Definition of Done ("the marketplace works fully without them"), and
+  both need infrastructure this repo doesn't own the decision on: a live
+  `RESEND_API_KEY` (added to Supabase Edge Function Secrets, not this repo) and
+  a way for a `pg_cron` function to read it (Vault vs. a GUC) that hasn't been
+  chosen; the cleanup job means a `pg_net` call to the Storage REST API with
+  the service-role key living inside SQL. Custom SMTP for Supabase Auth itself
+  is separately not configured (no verified sending domain yet). Nothing in
+  this phase depends on either — `pg_net` was already installed guarded in
+  Phase 1, and `RESEND_API_KEY` / `EMAIL_FROM` were already stubbed in
+  `.env.example`; both stay unused until that infra decision is made.
+- **Tests**: `tests/unit/analytics.test.ts` (5 — insert shape, anon `user_id`,
+  default `properties`, never throws on a failed insert or a thrown client).
+  `tests/unit/admin.test.ts` +3 (`kpisFromRow` mapping, null confirmation
+  rate, null median). `scripts/verify-analytics.mjs` — 10/10 live: a Viewer can
+  insert but not read back an `analytics_events` row (an Admin can); a non-Admin
+  calling `admin_kpis()` is refused `ADMIN_ONLY`; every KPI figure cross-checked
+  against an independently-written raw-SQL query over the same tables (not the
+  migration's own SQL restated); seeded repeat-usage and response-time data
+  land in the expected range; `REQUEST_CREATED` still fires two rows through
+  the real PostgREST + trigger path. lint / typecheck / build / 208 unit tests
+  green; `check:bundle` clean.
+
 ## Phase 9 — Admin Platform
 
 The internal moderation console — AD-01..05. Every state-transition function

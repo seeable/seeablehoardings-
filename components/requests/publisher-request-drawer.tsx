@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/toast";
 import { RequestStatusPill } from "@/components/requests/request-status-pill";
 import { SlaCountdown } from "@/components/requests/sla-countdown";
 import { actOnRequest } from "@/lib/requests/client";
+import { emitAnalyticsEvent } from "@/lib/analytics/client";
 import { ApiClientError } from "@/lib/api/client";
 import { formatDateRange, formatDateTime, formatPrice } from "@/lib/format";
 import type { RequestResource } from "@/lib/requests/types";
@@ -71,6 +72,12 @@ function Body({
     setConflict(false);
     try {
       await actOnRequest(r.id, action, extra);
+      if (action === "ACCEPT" || action === "REJECT") {
+        void emitAnalyticsEvent(
+          action === "ACCEPT" ? "REQUEST_ACCEPTED" : "REQUEST_REJECTED",
+          { request_id: r.id, hoarding_id: r.hoarding.id },
+        );
+      }
       toast.success(
         action === "ACCEPT"
           ? `Request confirmed — ${dates} is now booked.`

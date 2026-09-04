@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FilterBar } from "@/components/discovery/filter-bar";
 import { HoardingCard } from "@/components/discovery/hoarding-card";
 import { searchHoardings, filtersToSearchParams } from "@/lib/discovery/client";
+import { emitAnalyticsEvent } from "@/lib/analytics/client";
 import { ApiClientError } from "@/lib/api/client";
 import type { HoardingTypeView } from "@/lib/inventory/types";
 import type {
@@ -67,6 +68,12 @@ export function DiscoverView({ types }: { types: HoardingTypeView[] }) {
 
   React.useEffect(() => {
     let cancelled = false;
+    void emitAnalyticsEvent("SEARCH", {
+      type: filters.type ?? null,
+      max_price: filters.maxPrice ?? null,
+      has_location: !!filters.center,
+      sort: filters.sort,
+    });
     searchHoardings({ ...filters, page: 1 })
       .then((r) => {
         if (cancelled) return;
@@ -88,6 +95,13 @@ export function DiscoverView({ types }: { types: HoardingTypeView[] }) {
   }, [key, nonce]);
 
   function applyFilters(next: DiscoverFilters) {
+    void emitAnalyticsEvent("FILTER_USED", {
+      type: next.type ?? null,
+      max_price: next.maxPrice ?? null,
+      has_location: !!next.center,
+      max_distance: next.maxDistance ?? null,
+      sort: next.sort,
+    });
     const params = filtersToSearchParams(next);
     if (mapView) params.set("view", "map");
     router.replace(params.toString() ? `/discover?${params}` : "/discover");

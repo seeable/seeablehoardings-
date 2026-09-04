@@ -15,6 +15,7 @@ import { mediaUrl } from "@/lib/inventory/projection";
 import type {
   AdminActionRow,
   AdminDashboard,
+  AdminKpis,
   AdminListingCounts,
   AdminListingRow,
   AdminPublisherRow,
@@ -26,6 +27,7 @@ type Supa = SupabaseClient<Database>;
 type HoardingRow = Database["public"]["Tables"]["hoardings"]["Row"];
 type DashboardSummary =
   Database["public"]["Functions"]["admin_dashboard_summary"]["Returns"][number];
+type KpisRow = Database["public"]["Functions"]["admin_kpis"]["Returns"][number];
 
 // --- pure helpers -----------------------------------------------------------
 
@@ -53,6 +55,25 @@ export function dashboardFromSummary(
       active: Number(s.active_publishers),
       pending_verification: Number(s.pending_verifications),
     },
+    generated_at: generatedAt,
+  };
+}
+
+/** admin_kpis() row → mvp-brd.md §14's seven KPIs (Phase 10). */
+export function kpisFromRow(r: KpisRow, generatedAt: string): AdminKpis {
+  return {
+    publishers_onboarded: Number(r.publishers_onboarded),
+    publishers_verified: Number(r.publishers_verified),
+    live_approved_listings: Number(r.live_approved_listings),
+    viewer_accounts: Number(r.viewer_accounts),
+    requests_submitted: Number(r.requests_submitted),
+    request_to_confirmation_rate_pct: Number(r.request_to_confirmation_rate ?? 0),
+    median_publisher_response_hours:
+      r.median_publisher_response_hours == null
+        ? null
+        : Number(r.median_publisher_response_hours),
+    repeat_viewers: Number(r.repeat_viewers),
+    repeat_publishers: Number(r.repeat_publishers),
     generated_at: generatedAt,
   };
 }

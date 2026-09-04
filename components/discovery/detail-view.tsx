@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/availability-calendar";
 import { PhotoCarousel } from "@/components/discovery/photo-carousel";
 import { SubmitRequestModal } from "@/components/requests/submit-request-modal";
+import { emitAnalyticsEvent } from "@/lib/analytics/client";
 import { formatPrice, formatDate, formatDateRange } from "@/lib/format";
 import { isWithin, todayIST, type ISODate } from "@/lib/date";
 import { humanizeAttributeKey } from "@/lib/inventory/attributes";
@@ -39,6 +40,15 @@ export function DetailView({ hoarding: h }: { hoarding: PublicHoardingDetail }) 
   });
   const [start, setStart] = React.useState<ISODate | null>(null);
   const [end, setEnd] = React.useState<ISODate | null>(null);
+
+  React.useEffect(() => {
+    void emitAnalyticsEvent("HOARDING_VIEWED", {
+      hoarding_id: h.id,
+      type: h.type.code,
+    });
+    // Fire once per detail page mount — h.id is stable for the component's life.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [h.id]);
 
   const dayState = React.useCallback(
     (d: ISODate): Exclude<DayState, "past"> => {
