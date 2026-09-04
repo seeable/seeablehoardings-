@@ -1,5 +1,37 @@
 # Changelog
 
+## Phase 13 — Deployment, Launch Prep & Operations
+
+Production infrastructure: staging-gated migration pipeline (dry-run before
+production, pre-deployment backup), `pg_cron` job monitoring (staleness alert
+if `expire-requests` stalls > 15 min), backup/restore procedures (weekly export,
+monthly restore test), and production limits + upgrade triggers. Free-tier
+headroom matrix (DB size, storage, egress, MAU, Realtime) with automatic
+escalation rules documented. Launch inventory gate: 50+ approved listings
+seeded across all hoarding types + geographic zones, Admin verified before
+go-live. First Admin provisioned separately (no public signup). Uptime probe +
+staleness monitoring live. Comprehensive on-call runbooks: troubleshooting
+decision tree, degradation scenarios (Supabase down, pg_cron stalled), and
+full rollback procedure (revert app code, restore DB if necessary).
+
+## Phase 12 — Testing & QA
+
+Deterministic test seed: ~60 listings across all 6 hoarding types (Bus Queue
+Shelter, Gantry, Unipole/Billboard, Cantilever, Metro Pillar, Wall Wrap),
+2+ Publishers (verified + pending), multiple Viewers, and requests in every
+lifecycle state (PENDING, CONFIRMED, EXPIRED, REJECTED) with availability
+blocks for date-conflict testing. Loads on `supabase db reset`.
+
+Critical-flow E2E suite (Playwright, 6 flows): (1) Viewer discover → filter →
+detail → request → Publisher accepts → Confirmed (Realtime); (2) Concurrent
+date conflict (A + B request same dates → A confirmed → B fails); (3) Publisher
+onboarding (signup → verification → listing wizard → Admin approval → live);
+(4) Rejection workflow (Admin rejects → Publisher edits → resubmits → approved);
+(5) SLA expiry (request past deadline → pg_cron expires → Realtime notifications);
+(6) Suspended Publisher (listings hidden, Confirmed requests unaffected).
+`npm run test:e2e` wired into CI. Integration test framework ready for 22 rule-ID
+traceability coverage.
+
 ## Phase 11 — Security Hardening & Content Protection Finalization
 
 Most of this phase's DB-layer requirements (full RLS coverage, `search_path`
