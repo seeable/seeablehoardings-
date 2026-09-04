@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { isActive, navForRole, type Role } from "@/components/nav/nav-config";
 import { cn } from "@/lib/utils";
@@ -21,9 +22,16 @@ export function LeftRail({ role }: { role: Role }) {
     >
       <Link
         href="/"
-        className="text-display text-ink-900 flex h-16 items-center px-5 text-xl tracking-wide"
+        className="flex h-16 items-center px-3 py-2"
       >
-        SEEABLE
+        <Image
+          src="/logo-horizontal.png"
+          alt="SEEABLE"
+          width={160}
+          height={80}
+          className="h-auto w-auto max-w-xs"
+          priority
+        />
       </Link>
       <ul className="flex flex-col gap-0.5 px-2 py-2">
         {items.map(({ label, href, icon: Icon }) => {

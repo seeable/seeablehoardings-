@@ -32,6 +32,9 @@ export const metadata: Metadata = {
   },
   description:
     "Discover, compare, and request outdoor advertising space in Bengaluru.",
+  icons: {
+    icon: "/logo-square.png",
+  },
 };
 
 export const viewport: Viewport = {
