@@ -33,6 +33,7 @@ type Supa = SupabaseClient<Database>;
 
 const REQ_ID_RE = /^req_[0-9A-HJKMNP-TV-Z]{26}$/i;
 const HAS_BODY = new Set(["POST", "PUT", "PATCH"]);
+const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export interface RouteContext<Q, B, P> {
   req: NextRequest;
@@ -92,6 +93,14 @@ export function defineRoute<
     try {
       const params = ((await context?.params) ?? {}) as P;
       const searchParams = req.nextUrl.searchParams;
+
+      // --- CSRF: same-origin check on every state-changing request --------
+      // (api-specification.md §33 · Phase 11). Browsers attach `Origin` on
+      // POST/PUT/PATCH/DELETE fetches even same-site; a cross-site page can
+      // send the request but not forge this header. No cookie/token scheme
+      // to bypass here — this alone is the mitigation, same as Next.js's own
+      // Server Actions origin check.
+      if (MUTATING.has(req.method)) assertSameOrigin(req);
 
       // --- 2. auth + role -------------------------------------------------
       if (config.auth) {
@@ -224,6 +233,27 @@ async function parseBody<B>(schema: ZodType<B>, req: NextRequest): Promise<B> {
   throw ApiError.of("VALIDATION_ERROR", undefined, {
     fields: zodFields(r.error),
   });
+}
+
+/**
+ * Reject a mutating request whose `Origin` (falling back to `Referer`, since
+ * some browser/proxy paths omit `Origin` on same-origin requests) does not
+ * match the request's own host. A same-site attacker page cannot set either
+ * header to our origin; a legitimate same-origin fetch always carries one.
+ */
+function assertSameOrigin(req: NextRequest): void {
+  const source = req.headers.get("origin") ?? req.headers.get("referer");
+  if (!source) throw ApiError.of("FORBIDDEN_ORIGIN");
+
+  let sourceOrigin: string;
+  try {
+    sourceOrigin = new URL(source).origin;
+  } catch {
+    throw ApiError.of("FORBIDDEN_ORIGIN");
+  }
+  if (sourceOrigin !== req.nextUrl.origin) {
+    throw ApiError.of("FORBIDDEN_ORIGIN");
+  }
 }
 
 function clientIp(req: NextRequest): string {

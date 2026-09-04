@@ -261,7 +261,16 @@ export default function SignupPage() {
           Create account
         </Button>
         <p className="text-ink-500 text-center text-xs">
-          By continuing you agree to SEEABLE&apos;s terms of use.
+          By continuing you agree to SEEABLE&apos;s{" "}
+          <Link href="/terms" className="underline">
+            Terms of Use
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="underline">
+            Privacy Policy
+          </Link>
+          . Payment and delivery are arranged directly between Publishers and
+          Viewers — SEEABLE is not a party to that agreement.
         </p>
       </form>
     </Card>

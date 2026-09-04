@@ -1,0 +1,19 @@
+## Phase 11 — automated dependency-update PRs (IMPLEMENTATION-PLAN.md §Phase 11
+## "npm audit / Dependabot"). Weekly, grouped to keep PR volume sane on a
+## single-maintainer repo; security updates from GitHub's advisory database
+## open immediately regardless of this schedule.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

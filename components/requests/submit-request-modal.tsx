@@ -298,8 +298,13 @@ export function SubmitRequestModal({
             </Button>
             <p className="text-ink-500 text-[11px]">
               This sends an interest request — it doesn&apos;t charge you or
-              guarantee the booking. {publisherName} will confirm availability
-              and pricing directly.
+              guarantee the booking. {publisherName} will confirm
+              availability, pricing, and delivery directly with you; SEEABLE
+              is not part of that agreement (see our{" "}
+              <a href="/terms" target="_blank" rel="noopener" className="underline">
+                Terms
+              </a>
+              ).
             </p>
           </>
         )}

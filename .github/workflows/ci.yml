@@ -39,6 +39,13 @@ jobs:
         run: npm run build
       - name: Assert no secrets in client bundle
         run: node scripts/assert-no-secrets-in-bundle.mjs
+      - name: Dependency audit (report only — see CHANGELOG for known findings)
+        # Phase 11: informational, not a merge gate. A real finding exists
+        # today (adm-zip <0.6.0 via @opennextjs/cloudflare's rclone.js,
+        # GHSA-xcpc-8h2w-3j85) whose only fix is a downgrade npm itself
+        # flags as breaking — that's a deliberate call for a human, not
+        # something CI should force or silently pass through.
+        run: npm audit --audit-level=high || true
 
   e2e:
     runs-on: ubuntu-latest

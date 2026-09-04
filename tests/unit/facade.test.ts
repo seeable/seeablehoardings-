@@ -1,5 +1,15 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
+import { NextRequest } from "next/server";
 import { z } from "zod";
+
+// The facade unconditionally builds a Supabase server client (even for a
+// public route with no auth check), and that client's cookie access needs a
+// real Next.js request-scope this test harness doesn't provide. The CSRF
+// tests below only exercise the Origin check ahead of it, so a harmless
+// stub is enough — no test here reads from the returned "client".
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: async () => ({}),
+}));
 import {
   parsePagination,
   paginationMeta,
@@ -10,6 +20,7 @@ import { zodFields } from "@/lib/api/validation";
 import { consume, resetRateLimits } from "@/lib/api/ratelimit";
 import { requireRow, forbidNotOwner } from "@/lib/api/authz";
 import { ApiError } from "@/lib/api/errors";
+import { defineRoute } from "@/lib/api/facade";
 
 const sp = (qs: string) => new URLSearchParams(qs);
 
@@ -123,6 +134,68 @@ describe("rate-limit token bucket", () => {
   it("keys are independent", () => {
     for (let i = 0; i < 3; i++) consume("a", { perMinute: 3, burst: 3 });
     expect(() => consume("b", { perMinute: 3, burst: 3 })).not.toThrow();
+  });
+});
+
+describe("CSRF — same-origin check on mutating requests (Phase 11, §33)", () => {
+  // A minimal public route (no auth/body) so a 200 unambiguously means the
+  // request cleared the Origin check and reached the handler.
+  const route = defineRoute({
+    path: "/api/v1/_test",
+    handler: async () => ({ data: { ok: true } }),
+  });
+
+  async function call(method: string, headers: Record<string, string> = {}) {
+    const req = new NextRequest("http://localhost:3000/api/v1/_test", {
+      method,
+      headers,
+    });
+    const res = await route(req, undefined);
+    return { status: res.status, body: (await res.json()) as unknown };
+  }
+
+  it("rejects POST with no Origin or Referer", async () => {
+    const { status, body } = await call("POST");
+    expect(status).toBe(403);
+    expect((body as { error: { code: string } }).error.code).toBe(
+      "FORBIDDEN_ORIGIN",
+    );
+  });
+
+  it("rejects POST from a foreign Origin", async () => {
+    const { status, body } = await call("POST", {
+      origin: "https://evil.example.com",
+    });
+    expect(status).toBe(403);
+    expect((body as { error: { code: string } }).error.code).toBe(
+      "FORBIDDEN_ORIGIN",
+    );
+  });
+
+  it("rejects DELETE from a foreign Origin", async () => {
+    const { status } = await call("DELETE", {
+      origin: "https://evil.example.com",
+    });
+    expect(status).toBe(403);
+  });
+
+  it("allows POST whose Origin matches the request's own host", async () => {
+    const { status } = await call("POST", { origin: "http://localhost:3000" });
+    expect(status).toBe(200);
+  });
+
+  it("falls back to Referer when Origin is absent", async () => {
+    const { status } = await call("PATCH", {
+      referer: "http://localhost:3000/some/page",
+    });
+    expect(status).toBe(200);
+  });
+
+  it("does not check Origin on GET", async () => {
+    const { status } = await call("GET", {
+      origin: "https://evil.example.com",
+    });
+    expect(status).toBe(200);
   });
 });
 

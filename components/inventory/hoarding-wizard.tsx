@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -422,6 +423,16 @@ export function HoardingWizard({
               <h2 className="text-h3 text-ink-900 mb-2">Submission readiness</h2>
               <SubmissionChecklist blockers={blockers} />
             </div>
+            <p className="text-ink-500 text-xs">
+              Submitting sends this listing for Admin review. Once live,
+              booking terms and payment are arranged directly between you and
+              the advertiser — SEEABLE is not a party to that agreement. See
+              our{" "}
+              <Link href="/terms" target="_blank" className="underline">
+                Terms of Use
+              </Link>
+              .
+            </p>
           </>
         )}
       </div>

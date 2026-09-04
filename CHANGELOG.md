@@ -1,5 +1,85 @@
 # Changelog
 
+## Phase 11 — Security Hardening & Content Protection Finalization
+
+Most of this phase's DB-layer requirements (full RLS coverage, `search_path`
+pinning on every `SECURITY DEFINER` function, column grants blocking role
+escalation and `original_storage_path` reads, the exclusion constraint,
+`VIEWER-002`'s unique index, `hoarding-private`'s zero storage policies, the
+Realtime publication scoped to exactly `notifications`+`requests`, and
+100%-coverage rate limiting on every mutating endpoint) turned out to already
+be satisfied by earlier phases' own discipline — re-verified against the
+**live** project via direct SQL this phase, not re-implemented. What was
+actually missing:
+
+- **CSRF — `lib/api/facade.ts`**: a same-origin check (`Origin`, falling back
+  to `Referer`) on every mutating request, ahead of auth. New `FORBIDDEN_ORIGIN`
+  error code. **Finding while verifying it live:** Next.js 16 already refuses
+  a mutating request whose `Origin` is present but doesn't match the host —
+  in both `next dev` and a real `next start`, not just `allowedDevOrigins`'
+  documented dev-only scope. This project's own check is what actually closes
+  the gap: a request with **no** `Origin`/`Referer` at all sails past Next's
+  built-in guard untouched, and Next's own rejection doesn't return this
+  API's documented error envelope. Verified against a live `next start`
+  server for POST/PATCH/DELETE, with and without a matching Origin.
+- **Security headers — `next.config.ts`**: CSP, `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, HSTS, and a `Permissions-Policy` that
+  grants only `geolocation=(self)` (the Discover "near me" filter). **Caught
+  before shipping, not after:** the first CSP (`script-src 'self'`, no
+  `'unsafe-inline'`) built and lint/typechecked clean but broke React
+  hydration in a real `next start` — Next.js stamps inline scripts into every
+  page for hydration/streaming data, and the strict directive silently
+  blocked them (`Minified React error #412`, invisible without opening a
+  browser console). Next's own CSP guide's nonce-based fix requires **every**
+  page to render dynamically, which would pull `/terms`, `/privacy`, and this
+  app's other static routes off Cloudflare's CDN cache — too large a
+  trade-off for this phase to make unasked. Took Next's own documented
+  fallback instead (`'unsafe-inline'` on `script-src`, kept static); the
+  residual risk is bounded by this codebase having zero
+  `dangerouslySetInnerHTML` calls. Re-verified with zero console CSP
+  violations across `/`, `/login`, `/signup`, `/terms`, `/privacy`, and an
+  authenticated `/discover` (real billboard photos, MapLibre, Supabase
+  Storage images all still loading) under a real `next start`.
+- **`npm audit` in CI + `.github/dependabot.yml`**: informational, not a
+  merge gate — surfaced a real finding (`adm-zip` <0.6.0 via
+  `@opennextjs/cloudflare`'s `rclone.js`, `GHSA-xcpc-8h2w-3j85`) whose only
+  fix is a downgrade npm's own tooling calls breaking; left for a deliberate
+  human call rather than auto-applied.
+- **`/terms` and `/privacy`** (new static pages) plus a one-line disclaimer
+  at signup, final listing submission, and request submission — copy
+  grounded in `mvp-brd.md` §12/§17's own already-agreed offline-settlement
+  and no-recourse-dispute language, and in what this schema actually stores
+  (cross-checked against `database-design.md` and `lib/analytics/client.ts`),
+  not generic boilerplate.
+- **`docs/runbooks/content-moderation.md`** and **`support-disputes.md`**:
+  criteria mapped to the Admin actions that already exist
+  (`approve_listing`/`reject_listing`/`delist_hoarding`/`suspend_publisher`),
+  plus an honest statement of what doesn't exist yet (no report button, no
+  refunds, no formal appeals) rather than implying a support surface this
+  MVP doesn't have.
+- **`docs/runbooks/watermarking-variant-a-design.md`**: recorded, not
+  implemented, per the plan's own "(Post-MVP hook)... design recorded"
+  scope. Notes that the billboard-import script's `sharp`+SVG watermark
+  (`scripts/import-billboards.mjs`) is a working Variant A reference — it
+  runs under plain Node.js, which is exactly why it *can't* run as-is inside
+  `POST /api/v1/hoardings/{id}/media`'s Cloudflare Workers runtime (no native
+  addons); sketches the Supabase-Edge-Function path instead.
+- **Test infra fix — `vitest.config.ts`**: aliased `server-only` to an empty
+  stub. The real package throws when `window` exists, which jsdom (this
+  project's test environment) always provides, so any test importing
+  `lib/api/facade.ts` (which pulls in `lib/auth/session.ts`) failed outright
+  — nothing had ever unit-tested the facade directly before this phase's new
+  CSRF tests were the first to try. `tests/unit/facade.test.ts` (+6 tests)
+  and new `tests/unit/security-headers.test.ts` (4 tests) exercise the real
+  `defineRoute()` handler and the real `next.config.ts` `headers()` function,
+  not re-typed expectations.
+- **Not done, deliberately**: Cloudflare KV/Durable-Object-backed rate
+  limiting (the existing in-memory scaffold already meets the functional
+  requirement; swapping the store is an infra decision, not a code gap);
+  MapTiler key domain-restriction (a dashboard setting, not repo-controlled);
+  migrating the live media pipeline to Variant A (the plan's own
+  "post-MVP hook," not this phase's).
+
 ## Billboard Inventory Import (out-of-sequence — ahead of Phase 11)
 
 A user-directed addition, not part of the phased roadmap: importing the 68

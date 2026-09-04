@@ -4,7 +4,7 @@ A two-sided marketplace connecting hoarding **Publishers** (inventory owners) wi
 
 - **Product spec:** [`docs/`](docs/) — PRD/BRD, module specs, architecture, database design, API spec, UI/UX (9 files).
 - **Build roadmap:** [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md) — 14 phases, every decision resolved.
-- **Status:** Billboard inventory import complete (out-of-sequence — see CHANGELOG.md) — 62 of 68 real site-survey photos are live, public, watermarked inventory in Discover (`npm run verify:billboards` — 8/8 live); 5 held at DRAFT by design (3 digital-type, 2 outside the single-city scope), 1 excluded pending manual classification. Phase 10 (Shared systems) complete before it — analytics events (`SEARCH`, `FILTER_USED`, `HOARDING_VIEWED`, `REQUEST_STARTED/SUBMITTED/ACCEPTED/REJECTED`, `PAGE_VIEW`) wired client-side into discovery/detail/request flows; `admin_kpis()` + `GET /api/v1/admin/kpis` for the 7 `mvp-brd.md` §14 KPIs; in-transaction notification writes re-verified. Email dispatch and storage cleanup are deferred (both optional per the plan; no Resend-in-Postgres wiring decided yet). `npm run verify:analytics` — 10/10 live. Phase 9 (Admin platform) complete before that — AD-01 Overview (4 counts, deep-links), AD-02 Publishers & Inventory (segmented control, status tabs, verify/suspend/approve/reject/delist/relist), AD-03 Verification detail (document signed-URL), AD-04 Listing review, AD-05 Activity feed. Phase 11 (security hardening) next.
+- **Status:** Phase 11 (Security hardening & content protection finalization) complete — CSRF same-origin check on every mutating request (`lib/api/facade.ts`), CSP/HSTS/frame-ancestors/`Permissions-Policy` headers (`next.config.ts`, verified against a real `next start` with zero console violations), `npm audit` in CI + Dependabot, `/terms` + `/privacy` pages with disclaimers wired into signup/listing-submission/request-submission, Admin content-moderation criteria + a minimal dispute runbook, and a recorded (not implemented) design for restoring server-side watermarking. Full RLS/grants/`search_path`/Realtime/rate-limit coverage from earlier phases re-verified live rather than re-built — see CHANGELOG.md. Billboard inventory import complete (out-of-sequence — see CHANGELOG.md) — 62 of 68 real site-survey photos are live, public, watermarked inventory in Discover (`npm run verify:billboards` — 8/8 live); 5 held at DRAFT by design (3 digital-type, 2 outside the single-city scope), 1 excluded pending manual classification. Phase 10 (Shared systems) complete before it — analytics events (`SEARCH`, `FILTER_USED`, `HOARDING_VIEWED`, `REQUEST_STARTED/SUBMITTED/ACCEPTED/REJECTED`, `PAGE_VIEW`) wired client-side into discovery/detail/request flows; `admin_kpis()` + `GET /api/v1/admin/kpis` for the 7 `mvp-brd.md` §14 KPIs; in-transaction notification writes re-verified. Email dispatch and storage cleanup are deferred (both optional per the plan; no Resend-in-Postgres wiring decided yet). `npm run verify:analytics` — 10/10 live. Phase 9 (Admin platform) complete before that — AD-01 Overview (4 counts, deep-links), AD-02 Publishers & Inventory (segmented control, status tabs, verify/suspend/approve/reject/delist/relist), AD-03 Verification detail (document signed-URL), AD-04 Listing review, AD-05 Activity feed. Phase 12 (Testing & QA) next.
 
 ## Stack
 
@@ -89,6 +89,7 @@ app/                    Next.js App Router
   (auth) (viewer) (publisher) (admin)   role-scoped route groups
   api/health/           uptime probe (bare JSON, no envelope)
   api/v1/               the thin REST facade
+  terms/ privacy/       static ToS / Privacy pages (Phase 11)
 components/
   ui/                   design-system primitives + Calendar + overlays (docs/02)
   nav/                  the three role nav shells — AppShell, rail, tabs, bell
@@ -111,9 +112,12 @@ components/requests/    VW-04 submit modal, VW-05 my-requests, PB-06 inbox, PB-0
 components/publisher/   PB-01 dashboard, PB-08 verification form + banner, SH-01 account
 components/admin/       AD-01..05 — overview, publishers & inventory, review drawers, activity
 components/analytics/   PageViewTracker — mounted once in the root layout
+components/legal/       shared shell for /terms and /privacy (Phase 11)
 supabase/               config.toml, migrations/, seed.sql
 tests/                  unit/ integration/ e2e/
 docs/                   product & technical specification
+docs/runbooks/          admin-provisioning, content-moderation, support-disputes,
+                        watermarking-variant-a-design
 billboards/             68 real site-survey photos — source for `npm run import:billboards`
 ```
 
