@@ -14,8 +14,8 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       rows={rows}
       aria-invalid={invalid || undefined}
       className={cn(
-        "bg-surface-1 text-ink-900 placeholder:text-ink-500 min-h-20 w-full rounded-md border px-3 py-2 text-sm",
-        "focus-visible:outline-2 focus-visible:outline-offset-2",
+        "bg-surface-1 text-ink-900 placeholder:text-ink-500 min-h-20 w-full rounded-md border px-3 py-2 text-sm transition-colors",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:border-gold-700",
         "disabled:bg-surface-2 disabled:text-ink-500",
         invalid ? "border-danger-700" : "border-border",
         className,

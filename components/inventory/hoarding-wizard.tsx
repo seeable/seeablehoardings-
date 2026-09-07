@@ -488,8 +488,8 @@ function Stepper({ step }: { step: number }) {
             <span
               className={cn(
                 "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
-                state === "done" && "bg-gold-500 text-ink-900",
-                state === "current" && "bg-ink-900 text-surface-1",
+                state === "done" && "bg-ink-900 text-surface-1",
+                state === "current" && "bg-gold-500 text-gold-800",
                 state === "todo" && "bg-surface-2 text-ink-500",
               )}
             >
@@ -539,7 +539,7 @@ function ReviewSummary({
         <button
           type="button"
           onClick={() => onEdit(stepNo)}
-          className="text-gold-700 text-xs font-medium"
+          className="text-gold-500 text-xs font-medium"
         >
           Edit
         </button>

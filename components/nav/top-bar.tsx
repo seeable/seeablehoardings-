@@ -30,8 +30,8 @@ export function TopBar({
           <Image
             src="/logo-horizontal.png"
             alt="SEEABLE"
-            width={100}
-            height={50}
+            width={144}
+            height={48}
             className="h-8 w-auto"
             priority
           />

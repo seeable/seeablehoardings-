@@ -31,7 +31,7 @@ export function NotificationBell({ role }: { role: Role }) {
       >
         <Bell className="h-5 w-5" aria-hidden />
         {unreadCount > 0 && (
-          <span className="bg-gold-500 text-ink-900 absolute top-1 right-1 flex min-h-[14px] min-w-[14px] items-center justify-center rounded-full px-1 text-[10px] font-bold">
+          <span className="bg-gold-500 text-gold-800 absolute top-1 right-1 flex min-h-[14px] min-w-[14px] items-center justify-center rounded-full px-1 text-[10px] font-bold">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}

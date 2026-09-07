@@ -216,7 +216,7 @@ function ViewerRequestDetail({
       {r.hoarding.is_currently_listed ? (
         <Link
           href={`/discover/${r.hoarding.id}`}
-          className="text-gold-800 inline-block text-sm font-medium hover:underline"
+          className="text-gold-500 inline-block text-sm font-medium hover:underline"
         >
           View hoarding
         </Link>

@@ -92,7 +92,7 @@ export default function TermsPage() {
 
       <p className="text-ink-500 text-xs">
         See also our{" "}
-        <Link href="/privacy" className="text-gold-700 underline">
+        <Link href="/privacy" className="text-gold-500 underline">
           Privacy Policy
         </Link>
         .

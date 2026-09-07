@@ -84,7 +84,7 @@ function Unavailable() {
         action={
           <Link
             href="/discover"
-            className="bg-ink-900 text-surface-1 hover:bg-ink-800 inline-flex h-10 items-center rounded-md px-4 text-sm font-semibold"
+            className="bg-gold-500 text-gold-800 hover:bg-gold-700 inline-flex h-10 items-center rounded-md px-4 text-sm font-semibold transition-colors"
           >
             Back to Discover
           </Link>

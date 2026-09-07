@@ -1,5 +1,74 @@
 # Changelog
 
+## Brand Identity — SEEABLE Black/Gold System (out-of-sequence — after Phase 13)
+
+A user-directed rebrand, not part of the phased roadmap: replacing the light
+neutral theme with the official SEEABLE identity (portal-doorway logo, "SEE
+IT. STEP INTO IT." tagline, black/charcoal/gold palette) across the entire
+product — every screen, not just the login page.
+
+- **Token remap, not a rewrite — `app/globals.css`.** The prior design
+  system's semantic token *names* (`ink-900`…`ink-300`, `surface-0/1/2`,
+  `gold-500/700/800`, `border`, `success/warning/danger/info/neutral`) were
+  kept; only their hex values changed (light → SEEABLE black/charcoal/gold).
+  Because the entire component tree was already disciplined about using
+  these tokens instead of ad-hoc colors, this one file re-themed the large
+  majority of the app automatically — no per-component rewrite needed for
+  base text/surface/border colors.
+- **What the blind remap got wrong (found by grepping for every "fill +
+  text" pairing, then verified live):** components that reused a *text*
+  token as a *fill* color for buttons/badges/chips — e.g. `bg-ink-900
+  text-surface-1` for a filled-dark primary button — inverted when `ink-900`
+  flipped from near-black to near-white. Fixed by hand in every such spot:
+  `Button`'s `primary` variant (now `bg-gold-500 text-gold-800`, the actual
+  brand CTA), the notification-bell unread badge, the wizard step indicator,
+  Discover's type-filter chips and list/map toggle, Admin's
+  publishers/listings segmented control, and the modal/drawer backdrop
+  scrim (was `bg-ink-900/40` — a translucent *white* veil after the flip;
+  now a theme-independent `bg-black/70`). A new `gold-800` token
+  (`#050505`) was added specifically for "text on a solid gold fill," kept
+  distinct from `gold-500` (readable gold *as* text/links).
+- **Real WCAG AA regression caught, not assumed away — `axe-core` scan
+  (auth, landing, discover, publisher, admin; zero violations after the
+  fix):** the "muted text" tier (`ink-500`, captions/hints/timestamps) sat
+  at 4.1:1 contrast against the new black background — under the 4.5:1 AA
+  floor for normal text. One token value change (`#707070` → `#808080`,
+  5.3:1) fixed every occurrence at once, the same leverage the token remap
+  itself relied on. Also found (pre-existing, unrelated to the rebrand) two
+  Discover filter `<select>`s with no accessible name — given `aria-label`s
+  while in the area.
+- **Assets — `public/logo-square.png`, `logo-horizontal.png`:** the real
+  transparent-PNG brand marks (portal doorway + "seeable HOARDINGS"
+  wordmark), replacing an earlier placeholder swap of a different logo
+  file. Verified pixel-level transparency with `sharp` (alpha=0 at the
+  corners, opaque only where the mark itself is) after an initial QA
+  screenshot appeared to show a black box behind the logo — traced to the
+  screenshot script's 400ms wait firing before the image had decoded, not a
+  real rendering bug; confirmed clean once the script waited for
+  `img.complete`.
+- **Auth gateway — `app/(auth)/layout.tsx` rebuilt as a split layout**
+  (brand panel + tagline + gold ambient glow on `lg+`, folds to a centered
+  card with a compact wordmark below `lg`) matching the supplied login-page
+  art direction. `/login` copy updated to "Welcome back / Sign in to
+  continue to SEEABLE."; `/signup`, `/forgot-password`, `/reset-password`
+  inherit the same shell.
+- **Landing (`app/page.tsx`) and both error surfaces (`app/not-found.tsx`,
+  `app/error.tsx`)** carry the tagline and a gold primary action ("Return to
+  SEEABLE" / "Try again") instead of the old hardcoded dark-button markup
+  those three pages had duplicated outside the shared `Button` component.
+- **Map markers (`components/discovery/hoarding-map.tsx`):** gold now marks
+  *only* the selected pin (previously every pin was gold) — restrained by
+  default, brand accent on the one moment that matters, per the "no
+  decorative gold" brief. Cluster/pin colors are MapLibre paint-property
+  hex literals (can't consume CSS tokens), updated to match by hand and
+  kept in sync via a `setPaintProperty` call that was already wiring the
+  radius on selection change but hadn't been wiring the color.
+- **Not touched, deliberately:** backend, database, RLS, API contracts,
+  business logic, auth implementation — this was a frontend/styling pass
+  only, per explicit instruction. The MapTiler base-map *style* (light or
+  dark basemap tiles) is an env-configured URL, not app code — out of scope
+  for a no-`.env`-changes rebrand.
+
 ## Phase 13 — Deployment, Launch Prep & Operations
 
 Production infrastructure: staging-gated migration pipeline (dry-run before

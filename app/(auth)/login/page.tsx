@@ -46,10 +46,10 @@ function LoginForm() {
 
   return (
     <Card>
-      <h1 className="text-ink-900 text-xl font-semibold">Log in</h1>
-      <p className="text-ink-500 mt-1 text-sm">
-        New here?{" "}
-        <Link href="/signup" className="text-gold-700 font-medium underline">
+      <h1 className="text-ink-900 text-2xl font-semibold">Welcome back</h1>
+      <p className="text-ink-700 mt-1 text-sm">
+        Sign in to continue to SEEABLE.{" "}
+        <Link href="/signup" className="text-gold-500 font-medium underline">
           Sign up
         </Link>
       </p>
@@ -85,7 +85,7 @@ function LoginForm() {
         <div className="-mt-1 text-right">
           <Link
             href="/forgot-password"
-            className="text-gold-700 text-sm underline"
+            className="text-gold-500 text-sm underline"
           >
             Forgot password?
           </Link>

@@ -196,7 +196,7 @@ export function AvailabilityCalendar({
                 state === "past" && "bg-surface-2 text-ink-300",
                 state === "booked" && "bg-ink-300 text-ink-500",
                 state === "held" && "bg-warning-50 text-warning-700",
-                inRange && "bg-gold-100 text-gold-800",
+                inRange && "bg-gold-100 text-gold-500",
                 isEnd && inRange && "ring-gold-700 z-10 font-semibold ring-2",
                 selectable && "hover:bg-surface-2 cursor-pointer",
                 "focus-visible:ring-gold-700 focus-visible:ring-2",

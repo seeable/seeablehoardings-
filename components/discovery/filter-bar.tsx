@@ -119,6 +119,7 @@ export function FilterBar({
           </button>
           <Select
             className="h-9 w-24"
+            aria-label="Search radius"
             disabled={!filters.center}
             value={filters.maxDistance ?? ""}
             placeholder="Radius"
@@ -136,6 +137,7 @@ export function FilterBar({
 
         <Select
           className="h-9 w-40"
+          aria-label="Sort by"
           value={filters.center ? "distance" : (filters.sort ?? "newest")}
           disabled={!!filters.center}
           onChange={(e) => patch({ sort: e.target.value as DiscoverSort })}
@@ -191,7 +193,7 @@ function Chip({
       className={cn(
         "shrink-0 rounded-full border px-3 py-1.5 text-[13px] font-medium whitespace-nowrap",
         active
-          ? "border-ink-900 bg-ink-900 text-surface-1"
+          ? "border-gold-500 bg-gold-500 text-gold-800"
           : "border-border text-ink-700 hover:bg-surface-2",
         disabled && "cursor-not-allowed opacity-50 hover:bg-transparent",
       )}

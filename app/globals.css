@@ -1,39 +1,44 @@
 @import "tailwindcss";
 
 /*
-  SEEABLE Hoardings design tokens — docs/02-Design-System-Components-Tokens.md §9/§11.
-  Light theme is canonical for the entire authenticated app (UI file 02 §8).
+  SEEABLE brand design tokens — premium black/gold identity ("SEE IT. STEP
+  INTO IT."). Dark theme is canonical across the entire product — marketing,
+  auth, and every authenticated screen. Semantic token NAMES are unchanged
+  from the prior light system (ink-* text ramp, surface-* elevation, gold-*
+  accent, border, success/warning/danger/info/neutral) so every component
+  already written against them re-themes automatically; only the values
+  below define "SEEABLE" vs. the old light palette.
 */
 @theme {
-  /* Neutrals — "Ink" and "Surface" */
-  --color-ink-900: #1e1c1a;
-  --color-ink-800: #2a2724;
-  --color-ink-700: #57534c;
-  --color-ink-500: #8a857c;
-  --color-ink-300: #b8b3a9;
-  --color-border: #e7e3dc;
-  --color-surface-0: #faf9f6;
-  --color-surface-1: #ffffff;
-  --color-surface-2: #f2f0eb;
+  /* Neutrals — "Ink" (text ramp, darkest-name = highest emphasis) and "Surface" (elevation) */
+  --color-ink-900: #f7f7f5; /* primary text — SEEABLE Primary White */
+  --color-ink-800: #e4e4e1;
+  --color-ink-700: #a6a6a6; /* secondary text */
+  --color-ink-500: #808080; /* muted text — WCAG AA (4.5:1) against surface-0 */
+  --color-ink-300: #454545; /* faint / disabled text */
+  --color-border: #2a2a2a;
+  --color-surface-0: #050505; /* page background — SEEABLE Black */
+  --color-surface-1: #121212; /* card / panel — Charcoal */
+  --color-surface-2: #181818; /* elevated / hover surface — Dark Surface */
 
-  /* Accent — SEEABLE Gold (restrained use) */
-  --color-gold-800: #5c4210;
-  --color-gold-700: #7a5816;
-  --color-gold-500: #c9a227;
-  --color-gold-100: #f7ecd2;
+  /* Accent — SEEABLE Gold */
+  --color-gold-800: #050505; /* text-on-gold (max contrast on filled-gold surfaces) */
+  --color-gold-700: #c89222; /* Premium Gold — focus rings, pressed/strong accents */
+  --color-gold-500: #d9a62e; /* SEEABLE Gold — primary accent */
+  --color-gold-100: rgba(217, 166, 46, 0.14); /* gold-tinted chip/badge background */
 
-  /* Semantic — status / feedback */
-  --color-success-700: #1e6b3c;
-  --color-success-50: #e8f5ec;
-  --color-warning-700: #8a5a00;
-  --color-warning-50: #fbf1dc;
-  --color-danger-700: #b3261e;
-  --color-danger-50: #fbeae9;
-  --color-info-700: #1d5b8f;
-  --color-info-50: #e9f2fa;
+  /* Semantic — status / feedback, tuned for legibility on dark surfaces */
+  --color-success-700: #34d399;
+  --color-success-50: rgba(52, 211, 153, 0.12);
+  --color-warning-700: #f0a020;
+  --color-warning-50: rgba(240, 160, 32, 0.12);
+  --color-danger-700: #f87171;
+  --color-danger-50: rgba(248, 113, 113, 0.12);
+  --color-info-700: #60a5fa;
+  --color-info-50: rgba(96, 165, 250, 0.12);
   /* Neutral status tint (Draft, Paused, Completed, Expired) — docs 02 §9.1 */
-  --color-neutral-700: #57534c;
-  --color-neutral-50: #f2f0eb;
+  --color-neutral-700: #a6a6a6;
+  --color-neutral-50: rgba(255, 255, 255, 0.06);
 
   /* Typography */
   --font-sans:
@@ -51,11 +56,11 @@
   --radius-xl: 20px;
   --radius-full: 9999px;
 
-  /* Elevation — soft shadows only */
-  --shadow-sm:
-    0 1px 2px rgba(30, 28, 26, 0.04), 0 1px 1px rgba(30, 28, 26, 0.03);
-  --shadow-md: 0 4px 12px rgba(30, 28, 26, 0.08);
-  --shadow-lg: 0 12px 32px rgba(30, 28, 26, 0.14);
+  /* Elevation — deep black shadows; gold-glow reserved for brand moments (docs §11) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 1px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+  --shadow-gold-glow: 0 0 0 1px rgba(217, 166, 46, 0.4), 0 8px 24px rgba(217, 166, 46, 0.18);
 
   /* Motion */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
@@ -80,6 +85,9 @@
 @layer base {
   * {
     border-color: var(--color-border);
+  }
+  :root {
+    color-scheme: dark;
   }
   body {
     background-color: var(--color-surface-0);
@@ -218,5 +226,24 @@
   }
   .animate-slide-left {
     animation: seeable-slide-left var(--duration-base) var(--ease-standard);
+  }
+
+  /* Brand accent utilities — "the portal": used sparingly on primary entry
+     points (auth CTA, hero, selected map marker), never on every card. */
+  .shadow-gold-glow {
+    box-shadow: var(--shadow-gold-glow);
+  }
+  .text-tagline {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+  .text-eyebrow {
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-ink-700);
   }
 }

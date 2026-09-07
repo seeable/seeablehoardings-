@@ -31,14 +31,14 @@ export const metadata: Metadata = {
     template: "%s · SEEABLE Hoardings",
   },
   description:
-    "Discover, compare, and request outdoor advertising space in Bengaluru.",
+    "SEE IT. STEP INTO IT. Discover, compare, and request outdoor advertising space in Bengaluru.",
   icons: {
     icon: "/logo-square.png",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#faf9f6",
+  themeColor: "#050505",
   width: "device-width",
   initialScale: 1,
 };

@@ -94,7 +94,7 @@ export function PublishersInventoryView() {
             className={
               "rounded px-3 py-1.5 text-sm font-medium capitalize transition-colors " +
               (view === v
-                ? "bg-ink-900 text-surface-1"
+                ? "bg-gold-500 text-gold-800"
                 : "text-ink-700 hover:text-ink-900")
             }
           >

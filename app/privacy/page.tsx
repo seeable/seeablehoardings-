@@ -63,7 +63,7 @@ export default function PrivacyPage() {
         enforced at the database level, not just hidden in the app. Contact
         happens through the request flow, and any direct arrangement after
         that is between the two of you (see our{" "}
-        <Link href="/terms" className="text-gold-700 underline">
+        <Link href="/terms" className="text-gold-500 underline">
           Terms of Use
         </Link>{" "}
         for what that means for disputes).

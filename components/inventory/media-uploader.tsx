@@ -131,7 +131,7 @@ export function MediaUploader({
           Drag photos here, or{" "}
           <button
             type="button"
-            className="text-gold-700 font-medium underline"
+            className="text-gold-500 font-medium underline"
             onClick={() => inputRef.current?.click()}
           >
             choose files

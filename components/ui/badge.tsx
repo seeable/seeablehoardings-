@@ -75,7 +75,7 @@ export function VerifiedBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "text-gold-800 inline-flex items-center gap-1 text-xs font-semibold",
+        "text-gold-500 inline-flex items-center gap-1 text-xs font-semibold",
         className,
       )}
     >
@@ -83,7 +83,7 @@ export function VerifiedBadge({ className }: { className?: string }) {
         className="bg-gold-500 flex h-4 w-4 items-center justify-center rounded-full"
         aria-hidden
       >
-        <Check className="h-3 w-3 text-white" strokeWidth={3} />
+        <Check className="text-gold-800 h-3 w-3" strokeWidth={3} />
       </span>
       Verified
     </span>

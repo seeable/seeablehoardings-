@@ -16,7 +16,7 @@ export function LegalPage({
 }) {
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
-      <Link href="/" className="text-gold-700 text-sm font-medium">
+      <Link href="/" className="text-gold-500 text-sm font-medium">
         ← SEEABLE
       </Link>
       <h1 className="font-display text-ink-900 mt-4 text-3xl">{title}</h1>

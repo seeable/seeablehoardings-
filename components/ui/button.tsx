@@ -13,20 +13,23 @@ import { cn } from "@/lib/utils";
  */
 const button = cva(
   "inline-flex select-none items-center justify-center gap-2 rounded-md font-semibold " +
-    "transition-[background-color,color,transform] duration-[120ms] ease-[var(--ease-standard)] " +
+    "transition-[background-color,color,transform,box-shadow] duration-[120ms] ease-[var(--ease-standard)] " +
     "active:scale-[0.98] " +
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-700 " +
     "disabled:pointer-events-none disabled:bg-surface-2 disabled:text-ink-300 disabled:border-transparent",
   {
     variants: {
       variant: {
-        primary: "bg-ink-900 text-surface-1 hover:bg-ink-800",
+        // Primary — the SEEABLE gold CTA ("step into it")
+        primary: "bg-gold-500 text-gold-800 hover:bg-gold-700 hover:shadow-gold-glow",
         secondary:
           "border border-border bg-surface-1 text-ink-900 hover:bg-surface-2",
-        ghost: "text-ink-900 hover:bg-surface-2",
+        ghost: "text-ink-900 hover:bg-surface-2 hover:text-gold-500",
         destructive:
           "border border-danger-700/30 bg-surface-1 text-danger-700 hover:bg-danger-50",
-        accent: "bg-gold-100 text-gold-800 hover:brightness-95",
+        // Accent — a softer, gold-outlined secondary brand moment
+        accent:
+          "border border-gold-500/40 bg-gold-100 text-gold-500 hover:bg-gold-500/20",
       },
       size: {
         sm: "h-8 px-3 text-[13px] leading-[18px]",

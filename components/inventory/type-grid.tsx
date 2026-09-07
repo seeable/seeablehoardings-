@@ -42,7 +42,7 @@ export function TypeGrid({
           >
             <span className="text-h4 text-ink-900 flex items-center gap-1.5">
               {t.display_name}
-              {selected && <Check className="text-gold-700 h-4 w-4" />}
+              {selected && <Check className="text-gold-500 h-4 w-4" />}
               {!t.is_listable && (
                 <Lock className="text-ink-500 h-3.5 w-3.5" aria-hidden />
               )}

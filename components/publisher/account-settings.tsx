@@ -225,7 +225,7 @@ function SecurityPanel() {
       </p>
       <Link
         href="/forgot-password"
-        className="bg-ink-900 text-surface-1 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
+        className="bg-gold-500 text-gold-800 hover:bg-gold-700 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium transition-colors"
       >
         Reset password
       </Link>
@@ -265,7 +265,7 @@ function VerificationPanel({
       )}
       <Link
         href="/publisher/verify"
-        className="text-gold-800 inline-block text-sm font-medium hover:underline"
+        className="text-gold-500 inline-block text-sm font-medium hover:underline"
       >
         {status === "VERIFIED" ? "View details" : "Go to verification"}
       </Link>

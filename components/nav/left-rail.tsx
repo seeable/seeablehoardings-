@@ -27,9 +27,9 @@ export function LeftRail({ role }: { role: Role }) {
         <Image
           src="/logo-horizontal.png"
           alt="SEEABLE"
-          width={160}
-          height={80}
-          className="h-auto w-auto max-w-xs"
+          width={216}
+          height={72}
+          className="h-auto w-auto max-w-[13rem]"
           priority
         />
       </Link>

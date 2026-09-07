@@ -9,10 +9,11 @@ import type { DiscoverCard } from "@/lib/discovery/types";
 const BLR: [number, number] = [77.5946, 12.9716];
 
 /**
- * VW-02 map — the same filtered result set as the list, plotted. `gold-700`
- * points, `ink-900` clusters (docs/03 VW-02). Precise pins to every Viewer, no
- * fuzzing (docs/27). Tile-load failure degrades to a message, never a crash;
- * the synced list beside the map is the accessible path.
+ * VW-02 map — the same filtered result set as the list, plotted. Restrained
+ * black points, SEEABLE gold marks the selected pin only (brand §16); black
+ * clusters. Precise pins to every Viewer, no fuzzing (docs/27). Tile-load
+ * failure degrades to a message, never a crash; the synced list beside the
+ * map is the accessible path.
  */
 export function HoardingMap({
   hoardings,
@@ -86,7 +87,7 @@ export function HoardingMap({
           source: "hoardings",
           filter: ["has", "point_count"],
           paint: {
-            "circle-color": "#1E1C1A",
+            "circle-color": "#0A0A0A",
             "circle-radius": ["step", ["get", "point_count"], 16, 10, 20, 25, 26],
           },
         });
@@ -107,7 +108,13 @@ export function HoardingMap({
           source: "hoardings",
           filter: ["!", ["has", "point_count"]],
           paint: {
-            "circle-color": "#7A5816",
+            // Restrained by default; SEEABLE gold marks the selected pin only (docs brand §16).
+            "circle-color": [
+              "case",
+              ["==", ["get", "id"], selectedId ?? ""],
+              "#D9A62E",
+              "#0A0A0A",
+            ],
             "circle-radius": [
               "case",
               ["==", ["get", "id"], selectedId ?? ""],
@@ -170,6 +177,13 @@ export function HoardingMap({
       ["==", ["get", "id"], selectedId ?? ""],
       9,
       6,
+    ]);
+    // SEEABLE gold marks the selected pin only; every other pin stays restrained.
+    map.setPaintProperty("point", "circle-color", [
+      "case",
+      ["==", ["get", "id"], selectedId ?? ""],
+      "#D9A62E",
+      "#0A0A0A",
     ]);
   }, [selectedId, ready]);
 

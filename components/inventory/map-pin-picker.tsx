@@ -52,7 +52,7 @@ export function MapPinPicker({
       });
       mapRef.current = map;
 
-      const marker = new maplibregl.Marker({ draggable: true, color: "#7A5816" })
+      const marker = new maplibregl.Marker({ draggable: true, color: "#D9A62E" })
         .setLngLat([start.lng, start.lat])
         .addTo(map);
       markerRef.current = marker;

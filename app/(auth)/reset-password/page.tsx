@@ -65,7 +65,7 @@ export default function ResetPasswordPage() {
         </Alert>
         <Link
           href="/forgot-password"
-          className="text-gold-700 mt-6 block text-center text-sm font-medium underline"
+          className="text-gold-500 mt-6 block text-center text-sm font-medium underline"
         >
           Request a new link
         </Link>

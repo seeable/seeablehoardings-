@@ -40,7 +40,7 @@ export function Drawer({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-ink-900/40 animate-fade-in absolute inset-0" aria-hidden />
+      <div className="bg-black/70 animate-fade-in absolute inset-0" aria-hidden />
       <div
         ref={ref}
         role="dialog"

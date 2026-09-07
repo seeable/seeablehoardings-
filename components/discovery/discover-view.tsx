@@ -253,7 +253,7 @@ function ToggleBtn({
       onClick={onClick}
       className={
         "flex items-center gap-1 rounded px-2.5 py-1 text-xs font-medium " +
-        (active ? "bg-ink-900 text-surface-1" : "text-ink-700")
+        (active ? "bg-gold-500 text-gold-800" : "text-ink-700")
       }
     >
       {children}
