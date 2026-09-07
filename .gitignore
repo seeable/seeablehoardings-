@@ -33,6 +33,7 @@
 .env*.local
 .env.development
 .env.production
+.env.example
 
 # misc
 .DS_Store
