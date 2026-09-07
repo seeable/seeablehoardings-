@@ -20,10 +20,13 @@ function LoginForm() {
   const next = params.get("next");
   const dest = next && next.startsWith("/") ? next : "/post-login";
 
+  const errorParam = params.get("error");
   const [formError, setFormError] = React.useState<string | null>(
-    params.get("error")
-      ? "Something went wrong signing you in. Please try again."
-      : null,
+    errorParam === "oauth_no_code" || errorParam === "oauth_exchange"
+      ? "Google sign-in couldn't be completed. Please try again."
+      : errorParam
+        ? "Something went wrong signing you in. Please try again."
+        : null,
   );
 
   const {
